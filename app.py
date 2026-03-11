@@ -28,8 +28,8 @@ import streamlit as st
 from signals import evaluate
 
 # ── .env / 봇 설정 ────────────────────────────────────────────────────────
-from telegram_bot import TelegramBot, BOT_TOKEN, CHAT_ID, TOP_N as _TG_TOP
-from kakao_bot import (
+from notifications.telegram_bot import TelegramBot, BOT_TOKEN, CHAT_ID, TOP_N as _TG_TOP
+from notifications.kakao_bot import (
     KakaoBot, send_report as _kakao_send_report,
     REST_API_KEY, ACCESS_TOKEN, REFRESH_TOKEN, CLIENT_SECRET, TOP_N as _KK_TOP,
 )

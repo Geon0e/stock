@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 sys.path.insert(0, str(Path(__file__).parent))
 
 from signals import evaluate
-from kakao_bot import KakaoBot, REST_API_KEY, ACCESS_TOKEN, REFRESH_TOKEN, CLIENT_SECRET
+from notifications.kakao_bot import KakaoBot, REST_API_KEY, ACCESS_TOKEN, REFRESH_TOKEN, CLIENT_SECRET
 
 MAX_WORKERS   = 5
 REQUEST_DELAY = 0.3

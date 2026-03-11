@@ -12,6 +12,14 @@ from pathlib import Path
 HISTORY_DIR = Path(__file__).parent
 
 
+def _normalize_market(market: str) -> str:
+    """'KOSPI 200' / 'kospi200' 등 → 'kospi200' or 'nasdaq100'"""
+    m = market.lower().replace(" ", "")
+    if "kospi" in m:
+        return "kospi200"
+    return "nasdaq100"
+
+
 def save_report(market: str, channel: str, df, top_n: int = 5) -> Path:
     """
     전송한 리포트를 날짜별 JSON 파일에 추가 저장.
@@ -19,6 +27,7 @@ def save_report(market: str, channel: str, df, top_n: int = 5) -> Path:
     """
     import pandas as pd
 
+    market = _normalize_market(market)
     now = datetime.now()
     date_str = now.strftime("%Y-%m-%d")
     time_str = now.strftime("%Y-%m-%d %H:%M:%S")

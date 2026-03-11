@@ -1,0 +1,96 @@
+[
+  {
+    "sent_at": "2026-03-11 13:21:24",
+    "channel": "kakao",
+    "market": "kospi200",
+    "total": 200,
+    "buy_count": 4,
+    "sell_count": 33,
+    "avg_score": 45.2,
+    "top_buy": [
+      {
+        "ticker": "047050",
+        "name": "포스코인터내셔널",
+        "score": 62,
+        "signal": "BUY",
+        "close": 75800,
+        "ret5": 14.85,
+        "ret20": 18.44
+      },
+      {
+        "ticker": "329180",
+        "name": "HD현대중공업",
+        "score": 61,
+        "signal": "BUY",
+        "close": 583000,
+        "ret5": 4.29,
+        "ret20": 8.16
+      },
+      {
+        "ticker": "042700",
+        "name": "한미반도체",
+        "score": 61,
+        "signal": "BUY",
+        "close": 324000,
+        "ret5": 2.86,
+        "ret20": 65.31
+      },
+      {
+        "ticker": "017960",
+        "name": "한국카본",
+        "score": 61,
+        "signal": "BUY",
+        "close": 42600,
+        "ret5": 10.79,
+        "ret20": 24.02
+      }
+    ],
+    "top_sell": [
+      {
+        "ticker": "008930",
+        "name": "한미사이언스",
+        "score": 36,
+        "signal": "SELL",
+        "close": 38000,
+        "ret5": -0.91,
+        "ret20": -18.19
+      },
+      {
+        "ticker": "015760",
+        "name": "한국전력",
+        "score": 37,
+        "signal": "SELL",
+        "close": 47600,
+        "ret5": -1.24,
+        "ret20": -21.58
+      },
+      {
+        "ticker": "298050",
+        "name": "HS효성첨단소재",
+        "score": 37,
+        "signal": "SELL",
+        "close": 207000,
+        "ret5": -0.96,
+        "ret20": -15.85
+      },
+      {
+        "ticker": "001430",
+        "name": "세아베스틸지주",
+        "score": 37,
+        "signal": "SELL",
+        "close": 61900,
+        "ret5": 1.48,
+        "ret20": -26.13
+      },
+      {
+        "ticker": "017800",
+        "name": "현대엘리베이터",
+        "score": 38,
+        "signal": "SELL",
+        "close": 88900,
+        "ret5": 3.37,
+        "ret20": -13.01
+      }
+    ]
+  }
+]

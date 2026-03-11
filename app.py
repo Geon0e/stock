@@ -158,7 +158,8 @@ def run_scan_nasdaq(days, use_cache):
 # ══════════════════════════════════════════════════════════════════════════
 
 STRATEGY_CHOICES = [
-    "이동평균 크로스 (5/20)",
+    "이동평균 크로스 V1 (5/20)",
+    "이동평균 크로스 V2 (5/20/60+RSI)",
     "이동평균 크로스 (20/60)",
     "RSI (14)",
     "볼린저밴드 (20,2σ)",
@@ -168,15 +169,16 @@ STRATEGY_CHOICES = [
 
 def _make_strategy(name, ticker):
     from backtest.strategies import (
-        MovingAverageCrossStrategy, RSIStrategy,
-        MomentumStrategy, BollingerBandStrategy,
+        MovingAverageCrossStrategy, MovingAverageCrossV2Strategy,
+        RSIStrategy, MomentumStrategy, BollingerBandStrategy,
     )
     return {
-        "이동평균 크로스 (5/20)":  MovingAverageCrossStrategy(ticker, 5,  20),
-        "이동평균 크로스 (20/60)": MovingAverageCrossStrategy(ticker, 20, 60),
-        "RSI (14)":               RSIStrategy(ticker, period=14),
-        "볼린저밴드 (20,2σ)":      BollingerBandStrategy(ticker, window=20),
-        "모멘텀 (60일)":            MomentumStrategy(ticker, lookback=60),
+        "이동평균 크로스 V1 (5/20)":       MovingAverageCrossStrategy(ticker, 5,  20),
+        "이동평균 크로스 V2 (5/20/60+RSI)": MovingAverageCrossV2Strategy(ticker, 5, 20, 60),
+        "이동평균 크로스 (20/60)":          MovingAverageCrossStrategy(ticker, 20, 60),
+        "RSI (14)":                        RSIStrategy(ticker, period=14),
+        "볼린저밴드 (20,2σ)":               BollingerBandStrategy(ticker, window=20),
+        "모멘텀 (60일)":                    MomentumStrategy(ticker, lookback=60),
     }[name]
 
 
@@ -379,66 +381,246 @@ def render_backtest_tab(df: pd.DataFrame, market: str, currency: str):
         st.info("먼저 스캔을 실행하세요.")
         return
 
-    # 설정 행
-    col_l, col_r = st.columns([2, 2])
-    with col_l:
-        # 종목 선택 (매수 추천 우선 정렬)
-        buy_tickers = df[df["signal"] == "BUY"][["ticker", "name", "score"]].copy()
-        other_tickers = df[df["signal"] != "BUY"][["ticker", "name", "score"]].copy()
-        all_tickers = pd.concat([buy_tickers, other_tickers]).reset_index(drop=True)
-        ticker_map, options = {}, []
-        for _, r in all_tickers.iterrows():
-            opt = f"[{r['ticker']}] {r['name']} (점수:{r['score']})"
-            options.append(opt)
-            ticker_map[opt] = r["ticker"]
+    # ── 종목 선택 ──────────────────────────────────────────────────────────
+    buy_tickers   = df[df["signal"] == "BUY"][["ticker", "name", "score"]].copy()
+    other_tickers = df[df["signal"] != "BUY"][["ticker", "name", "score"]].copy()
+    all_tickers   = pd.concat([buy_tickers, other_tickers]).reset_index(drop=True)
+    ticker_map, options = {}, []
+    for _, r in all_tickers.iterrows():
+        opt = f"[{r['ticker']}] {r['name']} (점수:{r['score']})"
+        options.append(opt)
+        ticker_map[opt] = r["ticker"]
 
-        selected_opt = st.selectbox("종목 선택", options, help="매수 추천 종목이 위에 표시됩니다")
-        selected_ticker = ticker_map[selected_opt]
-        strategy_name = st.selectbox("전략", STRATEGY_CHOICES)
+    selected_opt    = st.selectbox("종목 선택", options, help="매수 추천 종목이 위에 표시됩니다")
+    selected_ticker = ticker_map[selected_opt]
 
-    with col_r:
-        today = datetime.today()
-        start_date = st.date_input("시작일", value=today - timedelta(days=3*365),
-                                   max_value=today - timedelta(days=90))
-        end_date   = st.date_input("종료일", value=today, max_value=today)
-        capital    = st.number_input(
-            "초기 자본금",
-            min_value=100_000,
-            max_value=1_000_000_000,
-            value=10_000_000,
-            step=1_000_000,
-            format="%d",
-        )
-
-    run_btn = st.button("🚀 백테스트 실행", type="primary", use_container_width=True)
+    # ── 모드 선택 ──────────────────────────────────────────────────────────
+    mode = st.radio("모드", ["단일 전략", "V1 vs V2 비교"], horizontal=True)
     st.divider()
 
-    # 실행
-    bt_key = f"{market}_bt_result"
-    if run_btn:
-        engine, metrics, ohlcv_df = run_backtest(
-            selected_ticker, market, strategy_name,
-            start_date.strftime("%Y-%m-%d"),
-            end_date.strftime("%Y-%m-%d"),
-            capital,
+    today = datetime.today()
+
+    # ════════════════════════════════════════════════════════════════════════
+    # 단일 전략 모드
+    # ════════════════════════════════════════════════════════════════════════
+    if mode == "단일 전략":
+        col_l, col_r = st.columns([2, 2])
+        with col_l:
+            strategy_name = st.selectbox("전략", STRATEGY_CHOICES)
+        with col_r:
+            start_date = st.date_input("시작일", value=today - timedelta(days=3*365),
+                                       max_value=today - timedelta(days=90))
+            end_date   = st.date_input("종료일", value=today, max_value=today)
+            capital    = st.number_input("초기 자본금", min_value=100_000,
+                                         max_value=1_000_000_000, value=10_000_000,
+                                         step=1_000_000, format="%d")
+
+        run_btn = st.button("🚀 백테스트 실행", type="primary", use_container_width=True)
+
+        bt_key = f"{market}_bt_result"
+        if run_btn:
+            engine, metrics, ohlcv_df = run_backtest(
+                selected_ticker, market, strategy_name,
+                start_date.strftime("%Y-%m-%d"),
+                end_date.strftime("%Y-%m-%d"),
+                capital,
+            )
+            if engine and metrics:
+                st.session_state[bt_key] = {
+                    "engine": engine, "metrics": metrics, "ohlcv": ohlcv_df,
+                    "ticker": selected_ticker, "strategy": strategy_name,
+                    "market": market, "currency": currency,
+                }
+
+        bt = st.session_state.get(bt_key)
+        if not bt:
+            st.caption("종목과 전략을 선택한 뒤 '백테스트 실행'을 눌러주세요.")
+            return
+        _render_bt_results(bt)
+
+    # ════════════════════════════════════════════════════════════════════════
+    # V1 vs V2 비교 모드
+    # ════════════════════════════════════════════════════════════════════════
+    else:
+        col_l, col_r = st.columns([2, 2])
+        with col_l:
+            start_date = st.date_input("시작일", value=today - timedelta(days=3*365),
+                                       max_value=today - timedelta(days=90),
+                                       key="cmp_start")
+            end_date   = st.date_input("종료일", value=today, max_value=today,
+                                       key="cmp_end")
+        with col_r:
+            capital = st.number_input("초기 자본금", min_value=100_000,
+                                      max_value=1_000_000_000, value=10_000_000,
+                                      step=1_000_000, format="%d", key="cmp_cap")
+            slip_base = st.number_input("기준 슬리피지 (%)", min_value=0.01,
+                                        max_value=1.0, value=0.1, step=0.01,
+                                        format="%.2f", key="cmp_slip") / 100
+
+        cmp_btn = st.button("🔬 V1 vs V2 비교 실행", type="primary", use_container_width=True)
+
+        cmp_key = f"{market}_cmp_result_{selected_ticker}"
+        if cmp_btn:
+            with st.spinner("데이터 불러오는 중..."):
+                if market == "KOSPI 200":
+                    from data.fetcher import get_ohlcv
+                    ohlcv = get_ohlcv(selected_ticker,
+                                      start_date.strftime("%Y-%m-%d"),
+                                      end_date.strftime("%Y-%m-%d"))
+                else:
+                    from data.us_fetcher import get_ohlcv_us
+                    ohlcv = get_ohlcv_us(selected_ticker,
+                                         start_date.strftime("%Y-%m-%d"),
+                                         end_date.strftime("%Y-%m-%d"), use_cache=True)
+
+            if ohlcv is None or ohlcv.empty:
+                st.error("데이터 수집 실패")
+            elif len(ohlcv) < 120:
+                st.warning(f"데이터가 부족합니다 ({len(ohlcv)}일). 최소 120일 이상 필요합니다.")
+            else:
+                with st.spinner("V1 / V2 / Buy&Hold 비교 실행 중..."):
+                    from backtest.comparison import run_comparison
+                    import contextlib, io as _io
+                    buf = _io.StringIO()
+                    with contextlib.redirect_stdout(buf):
+                        cmp = run_comparison(
+                            ohlcv, selected_ticker, capital=capital,
+                            base_slippage=slip_base,
+                        )
+                    cmp["_ohlcv"] = ohlcv
+                    st.session_state[cmp_key] = cmp
+
+        cmp = st.session_state.get(cmp_key)
+        if not cmp:
+            st.caption("종목을 선택하고 '비교 실행'을 눌러주세요.")
+            return
+        _render_comparison(cmp, selected_ticker, currency)
+
+
+# ── V1 vs V2 비교 렌더링 ──────────────────────────────────────────────────────
+
+def _render_comparison(cmp: dict, ticker: str, currency: str):
+    import plotly.graph_objects as go
+
+    summary   = cmp["summary"]
+    multi_df  = cmp["multi_period"]
+    slip_df   = cmp["slippage_sens"]
+    robust    = cmp["robustness"]
+    eq_v1     = cmp["equity_full"]["v1"]
+    eq_v2     = cmp["equity_full"]["v2"]
+    ohlcv     = cmp.get("_ohlcv", pd.DataFrame())
+
+    v1 = summary.get("v1", {})
+    v2 = summary.get("v2", {})
+    bh = summary.get("bh", {})
+
+    # ── 요약 지표 카드 ────────────────────────────────────────────────────
+    st.markdown(f"#### [{ticker}] V1 vs V2 vs Buy & Hold")
+
+    labels = ["CAGR(%)", "MDD(%)", "샤프비율", "연간거래횟수", "승률(%)"]
+    col_lbl, col_v1, col_v2, col_bh = st.columns([2, 1.5, 1.5, 1.5])
+    col_lbl.markdown("**지표**")
+    col_v1.markdown("**V1 (MA5/20)**")
+    col_v2.markdown("**V2 (MA5/20/60)**")
+    col_bh.markdown("**Buy & Hold**")
+
+    for lbl in labels:
+        v1v = v1.get(lbl)
+        v2v = v2.get(lbl)
+        bhv = bh.get(lbl)
+
+        def _fmt(v):
+            if v is None: return "—"
+            if lbl in ("거래횟수", "연간거래횟수"): return f"{v:.0f}"
+            return f"{v:+.1f}" if lbl in ("CAGR(%)", "MDD(%)") else f"{v:.2f}" if lbl == "샤프비율" else f"{v:.1f}%"
+
+        def _color(v, ref):
+            if v is None or ref is None: return ""
+            better = v > ref if lbl != "MDD(%)" else v > ref  # MDD: 덜 음수가 좋음
+            return "color:#0ecb81" if better else "color:#f6465d"
+
+        col_lbl.markdown(lbl)
+        col_v1.markdown(f'<span style="{_color(v1v, bhv)}">{_fmt(v1v)}</span>', unsafe_allow_html=True)
+        col_v2.markdown(f'<span style="{_color(v2v, bhv)}">{_fmt(v2v)}</span>', unsafe_allow_html=True)
+        col_bh.markdown(f"{_fmt(bhv)}")
+
+    st.divider()
+
+    # ── 자산 곡선 비교 ────────────────────────────────────────────────────
+    if not eq_v1.empty or not eq_v2.empty:
+        fig = go.Figure()
+        capital = v1.get("최종자본", 10_000_000)
+        init    = 10_000_000  # 초기 자본 (정규화)
+
+        if not eq_v1.empty:
+            fig.add_trace(go.Scatter(x=eq_v1.index, y=eq_v1 / eq_v1.iloc[0] * 100,
+                                     name="V1", line=dict(color="#f7931a", width=2)))
+        if not eq_v2.empty:
+            fig.add_trace(go.Scatter(x=eq_v2.index, y=eq_v2 / eq_v2.iloc[0] * 100,
+                                     name="V2", line=dict(color="#0ecb81", width=2)))
+        if not ohlcv.empty:
+            bh_norm = ohlcv["Close"] / ohlcv["Close"].iloc[0] * 100
+            fig.add_trace(go.Scatter(x=bh_norm.index, y=bh_norm,
+                                     name="Buy & Hold", line=dict(color="#718096", width=1.5, dash="dot")))
+
+        fig.update_layout(
+            title="자산 곡선 비교 (초기=100 기준)",
+            height=360,
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#e2e8f0"),
+            legend=dict(bgcolor="rgba(0,0,0,0)"),
+            xaxis=dict(gridcolor="#2d3748"),
+            yaxis=dict(gridcolor="#2d3748", ticksuffix=""),
+            margin=dict(l=0, r=0, t=36, b=0),
         )
-        if engine and metrics:
-            st.session_state[bt_key] = {
-                "engine":   engine,
-                "metrics":  metrics,
-                "ohlcv":    ohlcv_df,
-                "ticker":   selected_ticker,
-                "strategy": strategy_name,
-                "market":   market,
-                "currency": currency,
-            }
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-    bt = st.session_state.get(bt_key)
-    if not bt:
-        st.caption("종목과 전략을 선택한 뒤 '백테스트 실행'을 눌러주세요.")
-        return
+    # ── 다기간 성과 테이블 ────────────────────────────────────────────────
+    st.markdown("#### 📅 다기간 일관성")
+    if not multi_df.empty:
+        st.dataframe(
+            multi_df.style.format({
+                "CAGR(%)": "{:+.1f}%",
+                "MDD(%)":  "{:.1f}%",
+                "샤프비율": "{:.2f}",
+                "연간거래횟수": "{:.0f}",
+                "승률(%)": "{:.1f}%",
+            }, na_rep="—"),
+            use_container_width=True, hide_index=True,
+        )
 
-    _render_bt_results(bt)
+    st.divider()
+
+    # ── 슬리피지 민감도 ───────────────────────────────────────────────────
+    st.markdown("#### 💧 슬리피지 민감도")
+    if not slip_df.empty:
+        st.dataframe(
+            slip_df.style.format({
+                "CAGR(%)": "{:+.1f}%",
+                "MDD(%)":  "{:.1f}%",
+                "거래횟수": "{:.0f}",
+            }, na_rep="—"),
+            use_container_width=True, hide_index=True,
+        )
+
+    st.divider()
+
+    # ── 로버스트니스 체크리스트 ───────────────────────────────────────────
+    st.markdown("#### ✅ 로버스트니스 체크리스트")
+    if robust:
+        rob_df = pd.DataFrame(robust)
+        st.dataframe(rob_df, use_container_width=True, hide_index=True)
+
+        v1_pass = sum(1 for r in robust if r["V1"].startswith("✅"))
+        v2_pass = sum(1 for r in robust if r["V2"].startswith("✅"))
+        total   = len(robust)
+        c1, c2 = st.columns(2)
+        c1.metric("V1 통과", f"{v1_pass}/{total}",
+                  delta="통과" if v1_pass >= total * 0.6 else "미통과",
+                  delta_color="normal" if v1_pass >= total * 0.6 else "inverse")
+        c2.metric("V2 통과", f"{v2_pass}/{total}",
+                  delta="통과" if v2_pass >= total * 0.6 else "미통과",
+                  delta_color="normal" if v2_pass >= total * 0.6 else "inverse")
 
 
 def _render_bt_results(bt: dict):

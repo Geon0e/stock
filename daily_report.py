@@ -13,6 +13,7 @@ import argparse
 import time
 import contextlib
 import io as _io
+import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -197,6 +198,30 @@ def send_daily_report(bot: KakaoBot, df, market: str):
     else:
         bot.send_text("★ 매수 추천 종목 없음")
 
+    # ── 메시지 3: 뉴스 요약 (TOP 매수 종목) ──────────────────────────────
+    try:
+        from data.news_fetcher import fetch_news
+        from data.news_summarizer import summarize_stocks_news
+
+        stocks_news = []
+        for _, row in top_buy.iterrows():
+            articles = fetch_news(row["ticker"], market, max_articles=5)
+            if articles:
+                stocks_news.append({
+                    "ticker":   row["ticker"],
+                    "name":     row["name"],
+                    "articles": articles,
+                })
+
+        if stocks_news:
+            summary_text = summarize_stocks_news(stocks_news, market)
+            if summary_text:
+                msg = f"📰 매수 추천 종목 뉴스 요약\n{'─'*22}\n{summary_text}"
+                bot.send_text(msg)
+                print("[전송] 뉴스 요약 완료")
+    except Exception as e:
+        print(f"[뉴스] 수집/요약 실패 (생략): {e}")
+
     # ── 메시지 4: 백테스팅 결과 (TOP 3 매수 종목) ────────────────────────
     bt_tickers = list(buy_df.head(TOP_BT)[["ticker", "name"]].itertuples(index=False, name=None))
     if bt_tickers:
@@ -220,12 +245,55 @@ def send_daily_report(bot: KakaoBot, df, market: str):
         bot.send_text("\n".join(bt_lines))
         print("[전송] 백테스팅 완료")
 
+    # ── 워치리스트 등록 (BUY 종목 자동 추적) ──────────────────────────────
+    try:
+        from notifications.watchlist import add_from_df
+        add_from_df(buy_df, market)
+    except Exception as e:
+        print(f"[워치리스트] 등록 실패: {e}")
+
     # ── 기록 저장 ──────────────────────────────────────────────────────────
     try:
         path = save_report(market, "kakao", df, top_n=TOP_SCAN)
         print(f"[기록] 저장 완료 → {path}")
     except Exception as e:
         print(f"[기록] 저장 실패: {e}")
+
+
+# ── 매도 모니터 자동 시작 ────────────────────────────────────────────────
+
+def _start_sell_monitor():
+    """
+    리포트 전송 완료 후 sell_monitor.py를 백그라운드로 실행.
+    이미 실행 중이면 중복 실행하지 않음.
+    """
+    monitor_path = Path(__file__).parent / "notifications" / "sell_monitor.py"
+    if not monitor_path.exists():
+        print("[모니터] sell_monitor.py 파일을 찾을 수 없습니다.")
+        return
+
+    # 이미 실행 중인지 확인
+    try:
+        import psutil
+        for proc in psutil.process_iter(["cmdline"]):
+            cmdline = " ".join(proc.info.get("cmdline") or [])
+            if "sell_monitor.py" in cmdline:
+                print("[모니터] sell_monitor가 이미 실행 중입니다. 중복 실행 생략.")
+                return
+    except ImportError:
+        pass  # psutil 없으면 중복 체크 생략
+
+    try:
+        flags = 0
+        if sys.platform == "win32":
+            flags = subprocess.CREATE_NEW_CONSOLE
+        subprocess.Popen(
+            [sys.executable, str(monitor_path)],
+            creationflags=flags,
+        )
+        print("[모니터] 매도 모니터 자동 시작 완료 (장 시작 09:00까지 자동 대기)")
+    except Exception as e:
+        print(f"[모니터] 자동 시작 실패: {e}")
 
 
 # ── 스케줄러 ─────────────────────────────────────────────────────────────
@@ -250,6 +318,9 @@ def job(market: str):
         bot = KakaoBot(REST_API_KEY, ACCESS_TOKEN, REFRESH_TOKEN, CLIENT_SECRET)
         send_daily_report(bot, df, market)
         print(f"[완료] {datetime.now().strftime('%H:%M:%S')}")
+
+        # ── 매도 모니터 자동 시작 ────────────────────────────────────────────
+        _start_sell_monitor()
 
     except Exception as e:
         print(f"[오류] {e}")

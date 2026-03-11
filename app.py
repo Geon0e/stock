@@ -992,7 +992,247 @@ def _sparkline(series: pd.Series, color: str) -> go.Figure:
     return fig
 
 
+# ── 뉴스 탭 ──────────────────────────────────────────────────────────────────
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def _fetch_news_cached(ticker: str, market: str) -> list:
+    """뉴스 수집 (30분 캐시)"""
+    from data.news_fetcher import fetch_news
+    return fetch_news(ticker, market, max_articles=5)
+
+
+def _has_anthropic_key() -> bool:
+    """ANTHROPIC_API_KEY 설정 여부 확인 (.env 포함)"""
+    import os
+    from pathlib import Path as _Path
+    key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if key:
+        return True
+    env_path = _Path(__file__).parent / ".env"
+    if env_path.exists():
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line.startswith("ANTHROPIC_API_KEY="):
+                val = line.split("=", 1)[1].strip()
+                if val and not val.startswith("#"):
+                    return True
+    return False
+
+
+def render_news_tab(df: pd.DataFrame, market_key: str, top_n: int):
+    st.markdown("### 📰 매수 추천 종목 뉴스")
+
+    if df.empty:
+        st.info("먼저 사이드바에서 '🔍 스캔 시작'을 눌러 데이터를 수집하세요.")
+        return
+
+    # BUY 신호, score 높은 순으로 top_n개 선택
+    buy_df = (
+        df[df["signal"] == "BUY"]
+        .sort_values("score", ascending=False)
+        .head(top_n)
+        .reset_index(drop=True)
+    )
+
+    if buy_df.empty:
+        st.warning("현재 매수 추천 종목이 없습니다.")
+        return
+
+    market_label = "KOSPI 200" if market_key == "kospi200" else "NASDAQ 100"
+    st.caption(
+        f"{market_label} 기준 매수(BUY) 신호 상위 {len(buy_df)}개 종목 | "
+        f"뉴스는 최대 5건씩 표시됩니다 (30분 캐시)"
+    )
+    st.divider()
+
+    # 종목별 뉴스 수집 및 표시
+    stocks_news = []  # AI 요약에 사용할 데이터
+
+    for idx, row in buy_df.iterrows():
+        ticker = row["ticker"]
+        name   = row["name"]
+        score  = row["score"]
+
+        # 종목 헤더
+        score_color = "#0ecb81" if score >= 60 else "#ecc94b"
+        st.markdown(
+            f'<div style="background:#1a1d27;border:1px solid #2d3748;border-radius:10px;'
+            f'padding:14px 18px;margin-bottom:4px;">'
+            f'<span style="font-weight:700;color:#e2e8f0;font-size:1rem;">{name}</span>'
+            f'<span style="color:#4a5568;font-size:0.8rem;margin-left:8px;">{ticker}</span>'
+            f'<span style="float:right;color:{score_color};font-weight:700;font-size:0.88rem;">'
+            f'★ {score}/100</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+        # 뉴스 수집
+        with st.spinner(f"{name} 뉴스 수집 중..."):
+            articles = _fetch_news_cached(ticker, market_key)
+
+        stocks_news.append({"ticker": ticker, "name": name, "articles": articles})
+
+        if not articles:
+            st.caption("  뉴스를 가져오지 못했습니다.")
+        else:
+            for i, art in enumerate(articles, 1):
+                date_str = f"  `{art['date']}`" if art.get("date") else ""
+                st.markdown(
+                    f'<div style="padding:6px 16px;border-left:3px solid #2d3748;margin:4px 0;">'
+                    f'<span style="color:#a0aec0;font-size:0.84rem;">{i}. {art["title"]}</span>'
+                    f'<span style="color:#4a5568;font-size:0.76rem;margin-left:8px;">{art.get("date","")}</span>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+        st.markdown("<div style='margin-bottom:12px;'></div>", unsafe_allow_html=True)
+
+    st.divider()
+
+    # AI 뉴스 요약
+    st.markdown("#### 🤖 AI 뉴스 요약")
+
+    has_key = _has_anthropic_key()
+    if not has_key:
+        st.info(
+            "AI 요약 기능을 사용하려면 `.env` 파일에 `ANTHROPIC_API_KEY`를 설정하세요.\n\n"
+            "```\nANTHROPIC_API_KEY=sk-ant-...\n```"
+        )
+
+    ai_btn = st.button(
+        "🤖 AI 뉴스 요약 생성",
+        type="primary",
+        use_container_width=True,
+        disabled=not has_key,
+        help="" if has_key else ".env에 ANTHROPIC_API_KEY 설정 필요",
+    )
+
+    if ai_btn:
+        with st.spinner("Claude AI가 뉴스를 분석하는 중..."):
+            from data.news_summarizer import summarize_stocks_news
+            summary = summarize_stocks_news(stocks_news, market_key)
+
+        if summary:
+            st.markdown(
+                f'<div style="background:#1a1d27;border:1px solid #2d3748;border-radius:10px;'
+                f'padding:18px 20px;white-space:pre-wrap;color:#e2e8f0;font-size:0.88rem;'
+                f'line-height:1.65;">{summary}</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.warning("요약 결과를 가져오지 못했습니다. API 키나 anthropic 패키지 설치 상태를 확인하세요.")
+
+
 # ── 기록 탭 ──────────────────────────────────────────────────────────────────
+
+def render_monitor_tab():
+    st.markdown("### 🔍 매도 모니터 현황")
+
+    from notifications.watchlist import load, ALERT_LOG_PATH
+
+    # ── 워치리스트 ────────────────────────────────────────────────────────
+    st.markdown("#### 📋 워치리스트 (매수 추천 추적 중)")
+
+    watchlist = load()
+    if not watchlist:
+        st.info("워치리스트가 비어 있습니다. 아침 리포트 실행 후 BUY 종목이 자동 등록됩니다.")
+    else:
+        rows = []
+        for ticker, info in watchlist.items():
+            rows.append({
+                "티커":    ticker,
+                "종목명":  info.get("name", "-"),
+                "점수":    info.get("score", "-"),
+                "등록가":  info.get("price", 0),
+                "시장":    "KOSPI" if info.get("market", "kospi200") == "kospi200" else "NASDAQ",
+                "등록일":  info.get("added_at", "-"),
+            })
+        wl_df = pd.DataFrame(rows)
+
+        col1, col2 = st.columns(2)
+        col1.metric("감시 종목 수", f"{len(wl_df)}개")
+        markets = wl_df["시장"].value_counts()
+        col2.metric("시장", "  /  ".join([f"{k} {v}개" for k, v in markets.items()]))
+
+        st.dataframe(
+            wl_df.style.format({"등록가": "{:,.0f}"}),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+        # 워치리스트 초기화 버튼
+        if st.button("🗑️ 워치리스트 초기화", type="secondary"):
+            from notifications.watchlist import WATCHLIST_PATH
+            import json
+            WATCHLIST_PATH.write_text("{}", encoding="utf-8")
+            st.success("워치리스트를 초기화했습니다.")
+            st.rerun()
+
+    st.divider()
+
+    # ── 매도 알림 이력 ────────────────────────────────────────────────────
+    st.markdown("#### 🚨 매도 알림 이력")
+
+    if not ALERT_LOG_PATH.exists():
+        st.info("아직 매도 알림이 발송된 적 없습니다. 매도 시그널 발생 시 여기에 기록됩니다.")
+    else:
+        try:
+            log_df = pd.read_csv(ALERT_LOG_PATH, encoding="utf-8-sig")
+            if log_df.empty:
+                st.info("알림 이력이 없습니다.")
+            else:
+                log_df["datetime"] = pd.to_datetime(log_df["datetime"])
+                log_df = log_df.sort_values("datetime", ascending=False).reset_index(drop=True)
+
+                # 요약 메트릭
+                c1, c2, c3 = st.columns(3)
+                c1.metric("총 알림 횟수", f"{len(log_df)}회")
+                c2.metric("알림 종목 수", f"{log_df['ticker'].nunique()}개")
+                c3.metric("최근 알림", log_df["datetime"].iloc[0].strftime("%m/%d %H:%M"))
+
+                # 채널별 색상
+                def _channel_badge(ch):
+                    color = {"both": "#48bb78", "kakao": "#ecc94b",
+                             "telegram": "#63b3ed", "none": "#fc8181"}.get(str(ch), "#a0aec0")
+                    label = {"both": "카카오+텔레그램", "kakao": "카카오톡",
+                             "telegram": "텔레그램", "none": "실패"}.get(str(ch), ch)
+                    return f'<span style="background:{color};color:#1a1d27;padding:2px 8px;border-radius:4px;font-size:12px">{label}</span>'
+
+                # 표 출력
+                display_cols = ["datetime", "ticker", "name", "score", "price", "ret5", "regime", "sell_reasons", "channel"]
+                display_cols = [c for c in display_cols if c in log_df.columns]
+                show_df = log_df[display_cols].copy()
+                show_df["datetime"] = show_df["datetime"].dt.strftime("%Y-%m-%d %H:%M")
+                show_df.columns = ["시각", "티커", "종목명", "점수", "현재가", "5일수익률", "시장상태", "매도사유", "채널"][:len(display_cols)]
+
+                st.dataframe(
+                    show_df.style.format({
+                        "현재가":   "{:,.0f}",
+                        "5일수익률": "{:+.1f}%",
+                        "점수":     "{:.0f}",
+                    }, na_rep="-"),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+                # 종목별 알림 횟수 차트
+                if len(log_df) >= 2:
+                    st.markdown("##### 종목별 알림 횟수")
+                    cnt = log_df.groupby("name").size().sort_values(ascending=False).reset_index()
+                    cnt.columns = ["종목명", "횟수"]
+                    fig = px.bar(cnt, x="종목명", y="횟수", color="횟수",
+                                 color_continuous_scale="Reds",
+                                 template="plotly_dark", height=250)
+                    fig.update_layout(margin=dict(t=10, b=10), showlegend=False,
+                                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+                    st.plotly_chart(fig, use_container_width=True)
+        except Exception as e:
+            st.error(f"알림 이력 로드 실패: {e}")
+
+    # ── 새로고침 ──────────────────────────────────────────────────────────
+    if st.button("🔄 새로고침"):
+        st.rerun()
+
 
 def render_history_tab():
     st.markdown("### 📋 전송 기록")
@@ -1266,7 +1506,10 @@ def main():
                     st.sidebar.error(f"❌ 전송 실패: {e}")
 
     # ── 메인 탭 ───────────────────────────────────────────────────────────
-    tab_scan, tab_bt, tab_hist = st.tabs(["📊 신호 스캔", "📈 백테스팅", "📋 기록"])
+    market_key = "kospi200" if is_kospi else "nasdaq100"
+    tab_scan, tab_bt, tab_hist, tab_news, tab_monitor = st.tabs(
+        ["📊 신호 스캔", "📈 백테스팅", "📋 기록", "📰 뉴스", "🔍 모니터"]
+    )
 
     with tab_scan:
         render_scan_tab(df, top_n, currency)
@@ -1276,6 +1519,12 @@ def main():
 
     with tab_hist:
         render_history_tab()
+
+    with tab_news:
+        render_news_tab(df, market_key, top_n)
+
+    with tab_monitor:
+        render_monitor_tab()
 
 
 if __name__ == "__main__":

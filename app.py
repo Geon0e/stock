@@ -669,39 +669,30 @@ def send_kakao(df: pd.DataFrame, market: str, days: int, currency: str, top_n: i
     )
     bot.send_text(summary)
 
-    def _naver_link(ticker):
-        if currency == "$":
-            return f"https://finance.yahoo.com/quote/{ticker}"
-        return f"https://finance.naver.com/item/main.nhn?code={ticker}"
+    def _arrow(v):
+        return "▲" if v >= 0 else "▼"
 
-    def _items_for(rows, is_buy=True):
-        items = []
+    def _fmt_block(label, rows, signal_key):
+        lines = [f"{label}\n{'─'*22}"]
         for rank, (_, row) in enumerate(rows.iterrows(), 1):
-            strats = [d["name"] for d in row["details"] if d["signal"] == ("BUY" if is_buy else "SELL")]
+            strats = [d["name"] for d in row["details"] if d["signal"] == signal_key]
             close_str = f"${row['close']:,.2f}" if currency == "$" else f"{row['close']:,.0f}원"
-            items.append({
-                "title": f"{rank}. {row['name']} ({row['ticker']})",
-                "description": (
-                    f"{row['score']}/100 | {close_str}\n"
-                    f"{'▲' if row['ret5']>=0 else '▼'}{row['ret5']:+.1f}%(5일) "
-                    f"{'▲' if row['ret20']>=0 else '▼'}{row['ret20']:+.1f}%(20일)\n"
-                    f"{' · '.join(strats) if strats else '복합신호'}"
-                ),
-                "link": _naver_link(row["ticker"]),
-            })
-        return items
+            lines.append(
+                f"\n{rank}. {row['name']} ({row['ticker']})\n"
+                f"  점수 {row['score']}/100  |  {close_str}\n"
+                f"  {_arrow(row['ret5'])}{row['ret5']:+.1f}%(5일) "
+                f"{_arrow(row['ret20'])}{row['ret20']:+.1f}%(20일)\n"
+                f"  {' · '.join(strats) if strats else '복합신호'}"
+            )
+        return "\n".join(lines)
 
     top_buy = buy_df.head(top_n)
     if not top_buy.empty:
-        for i in range(0, len(top_buy), 5):
-            chunk = top_buy.iloc[i:i+5]
-            bot.send_list(f"매수 추천 ({i+1}~{i+len(chunk)}위)", _items_for(chunk, True))
+        bot.send_text(_fmt_block(f"★ 매수 추천 TOP{top_n}", top_buy, "BUY"))
 
     top_sell = sell_df.sort_values("score").head(top_n)
     if not top_sell.empty:
-        for i in range(0, len(top_sell), 5):
-            chunk = top_sell.iloc[i:i+5]
-            bot.send_list(f"매도 추천 ({i+1}~{i+len(chunk)}위)", _items_for(chunk, False))
+        bot.send_text(_fmt_block(f"★ 매도 추천 TOP{top_n}", top_sell, "SELL"))
     try:
         save_report(market, "kakao", df, top_n=top_n)
     except Exception:

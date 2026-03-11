@@ -178,26 +178,21 @@ def send_daily_report(bot: KakaoBot, df, market: str):
     bot.send_text(summary)
     print("[전송] 요약 완료")
 
-    # ── 메시지 2~3: 매수 추천 (5개씩 리스트형) ───────────────────────────
+    # ── 메시지 2: 매수 추천 (텍스트형 — 전체 노출) ──────────────────────
     top_buy = buy_df.head(TOP_SCAN)
     if not top_buy.empty:
-        for i in range(0, len(top_buy), 5):
-            chunk = top_buy.iloc[i:i+5]
-            items = []
-            for rank, (_, row) in enumerate(chunk.iterrows(), i + 1):
-                strats = [d["name"] for d in row["details"] if d["signal"] == "BUY"]
-                close_str = f"${row['close']:,.2f}" if currency == "$" else f"{row['close']:,.0f}원"
-                items.append({
-                    "title": f"{rank}. {row['name']} ({row['ticker']})",
-                    "description": (
-                        f"점수 {row['score']}/100  |  {close_str}\n"
-                        f"{_arrow(row['ret5'])}{row['ret5']:+.1f}%(5일) "
-                        f"{_arrow(row['ret20'])}{row['ret20']:+.1f}%(20일)\n"
-                        f"{' · '.join(strats) if strats else '복합신호'}"
-                    ),
-                    "link": _naver_link(row["ticker"], market),
-                })
-            bot.send_list(f"★ 매수 추천 TOP{TOP_SCAN} ({i+1}~{i+len(chunk)}위)", items)
+        lines = [f"★ 매수 추천 TOP{TOP_SCAN}\n{'─'*22}"]
+        for rank, (_, row) in enumerate(top_buy.iterrows(), 1):
+            strats = [d["name"] for d in row["details"] if d["signal"] == "BUY"]
+            close_str = f"${row['close']:,.2f}" if currency == "$" else f"{row['close']:,.0f}원"
+            lines.append(
+                f"\n{rank}. {row['name']} ({row['ticker']})\n"
+                f"  점수 {row['score']}/100  |  {close_str}\n"
+                f"  {_arrow(row['ret5'])}{row['ret5']:+.1f}%(5일) "
+                f"{_arrow(row['ret20'])}{row['ret20']:+.1f}%(20일)\n"
+                f"  {' · '.join(strats) if strats else '복합신호'}"
+            )
+        bot.send_text("\n".join(lines))
         print("[전송] 매수 추천 완료")
     else:
         bot.send_text("★ 매수 추천 종목 없음")

@@ -21,12 +21,13 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from signals import evaluate
 from notifications.kakao_bot import KakaoBot, REST_API_KEY, ACCESS_TOKEN, REFRESH_TOKEN, CLIENT_SECRET
+from reports.history import save_report
 
 MAX_WORKERS   = 5
 REQUEST_DELAY = 0.3
 BT_DAYS       = 365      # 백테스팅 기간 (1년)
 CAPITAL       = 10_000_000
-TOP_SCAN      = 10       # 매수 추천 전송 개수
+TOP_SCAN      = 5        # 매수 추천 전송 개수
 TOP_BT        = 3        # 백테스팅 실행 종목 수
 
 
@@ -223,6 +224,13 @@ def send_daily_report(bot: KakaoBot, df, market: str):
 
         bot.send_text("\n".join(bt_lines))
         print("[전송] 백테스팅 완료")
+
+    # ── 기록 저장 ──────────────────────────────────────────────────────────
+    try:
+        path = save_report(market, "kakao", df, top_n=TOP_SCAN)
+        print(f"[기록] 저장 완료 → {path}")
+    except Exception as e:
+        print(f"[기록] 저장 실패: {e}")
 
 
 # ── 스케줄러 ─────────────────────────────────────────────────────────────

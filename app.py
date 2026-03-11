@@ -26,6 +26,7 @@ import plotly.express as px
 import streamlit as st
 
 from signals import evaluate
+from reports.history import save_report, list_report_files, load_file, available_dates
 
 # ── .env / 봇 설정 ────────────────────────────────────────────────────────
 from notifications.telegram_bot import TelegramBot, BOT_TOKEN, CHAT_ID, TOP_N as _TG_TOP
@@ -643,6 +644,11 @@ def send_telegram(df: pd.DataFrame, market: str, days: int, currency: str, top_n
     ok  = bot.send(_fmt_summary(df, market, days, currency))
     ok &= bot.send(_fmt_buy_list(df, top_n, currency))
     ok &= bot.send(_fmt_sell_list(df, top_n, currency))
+    if ok:
+        try:
+            save_report(market, "telegram", df, top_n=top_n)
+        except Exception:
+            pass
     return ok
 
 
@@ -696,6 +702,10 @@ def send_kakao(df: pd.DataFrame, market: str, days: int, currency: str, top_n: i
         for i in range(0, len(top_sell), 5):
             chunk = top_sell.iloc[i:i+5]
             bot.send_list(f"매도 추천 ({i+1}~{i+len(chunk)}위)", _items_for(chunk, False))
+    try:
+        save_report(market, "kakao", df, top_n=top_n)
+    except Exception:
+        pass
     return True
 
 
@@ -809,6 +819,93 @@ def _sparkline(series: pd.Series, color: str) -> go.Figure:
     return fig
 
 
+# ── 기록 탭 ──────────────────────────────────────────────────────────────────
+
+def render_history_tab():
+    st.markdown("### 📋 전송 기록")
+
+    files = list_report_files()
+    if not files:
+        st.info("아직 저장된 기록이 없습니다. 카카오톡 또는 텔레그램으로 전송하면 자동 저장됩니다.")
+        return
+
+    # 날짜 / 시장 필터
+    col_mkt, col_date = st.columns(2)
+    with col_mkt:
+        mkt_opt = st.selectbox("시장", ["전체", "KOSPI 200", "NASDAQ 100"])
+    mkt_key = None if mkt_opt == "전체" else ("kospi200" if "KOSPI" in mkt_opt else "nasdaq100")
+
+    filtered_files = [f for f in files if (mkt_key is None or mkt_key in f.stem)]
+    date_labels = []
+    for f in filtered_files:
+        parts = f.stem.split("_", 1)
+        mkt_label = "KOSPI200" if "kospi" in f.stem else "NASDAQ100"
+        date_labels.append(f"{parts[0]}  [{mkt_label}]")
+
+    if not date_labels:
+        st.info("해당 시장의 기록이 없습니다.")
+        return
+
+    with col_date:
+        selected_label = st.selectbox("날짜", date_labels)
+
+    selected_file = filtered_files[date_labels.index(selected_label)]
+    records = load_file(selected_file)
+
+    if not records:
+        st.warning("기록 파일을 읽을 수 없습니다.")
+        return
+
+    # 전송 회차 선택 (같은 날 여러 번 전송 가능)
+    if len(records) > 1:
+        rec_labels = [f"{r['sent_at']}  [{r.get('channel','?')}]" for r in records]
+        chosen = st.selectbox("전송 시각", rec_labels)
+        rec = records[rec_labels.index(chosen)]
+    else:
+        rec = records[0]
+
+    # 요약 카드
+    st.divider()
+    mkt_disp = "KOSPI 200" if rec["market"] == "kospi200" else "NASDAQ 100"
+    ch_disp  = "📱 카카오톡" if rec.get("channel") == "kakao" else "✈️ 텔레그램"
+    st.markdown(
+        f"**{mkt_disp}** | {ch_disp} | 전송: `{rec['sent_at']}`"
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("분석 종목", f"{rec['total']}개")
+    c2.metric("매수 신호", f"{rec['buy_count']}개")
+    c3.metric("매도 신호", f"{rec['sell_count']}개")
+    c4.metric("평균 점수", f"{rec['avg_score']}점")
+
+    st.divider()
+
+    # 매수 / 매도 테이블
+    currency = "원" if rec["market"] == "kospi200" else "$"
+    tab_b, tab_s = st.tabs(["🟢 매수 추천", "🔴 매도 추천"])
+
+    def _hist_table(rows, currency):
+        if not rows:
+            st.info("해당 신호 없음")
+            return
+        df_h = pd.DataFrame(rows)
+        df_h = df_h.rename(columns={
+            "ticker": "티커", "name": "종목명", "score": "점수",
+            "signal": "신호", "close": "종가",
+            "ret5": "5일(%)", "ret20": "20일(%)",
+        })
+        close_fmt = "${:,.2f}" if currency == "$" else "{:,.0f}원"
+        df_h["종가"] = df_h["종가"].apply(lambda v: close_fmt.format(v))
+        df_h["5일(%)"]  = df_h["5일(%)"].apply(lambda v: f"{v:+.1f}%")
+        df_h["20일(%)"] = df_h["20일(%)"].apply(lambda v: f"{v:+.1f}%")
+        st.dataframe(df_h.drop(columns=["신호"]), use_container_width=True, hide_index=True)
+
+    with tab_b:
+        _hist_table(rec.get("top_buy", []), currency)
+    with tab_s:
+        _hist_table(rec.get("top_sell", []), currency)
+
+
 def render_macro_panel():
     """헤더 아래 매크로 지표 6개 카드"""
     col_title, col_btn = st.columns([6, 1])
@@ -913,7 +1010,7 @@ def main():
         st.divider()
         st.markdown("### ⚙️ 스캔 설정")
         days      = st.slider("분석 기간 (일)", 30, 120, 60, 10)
-        top_n     = st.slider("표시 종목 수",   5,  50,  10,  5)
+        top_n     = st.slider("표시 종목 수",   5,  50,  5,   5)
         use_cache = st.toggle("캐시 사용", value=True,
                               help="OFF 시 모든 데이터를 새로 수집합니다")
 
@@ -996,13 +1093,16 @@ def main():
                     st.sidebar.error(f"❌ 전송 실패: {e}")
 
     # ── 메인 탭 ───────────────────────────────────────────────────────────
-    tab_scan, tab_bt = st.tabs(["📊 신호 스캔", "📈 백테스팅"])
+    tab_scan, tab_bt, tab_hist = st.tabs(["📊 신호 스캔", "📈 백테스팅", "📋 기록"])
 
     with tab_scan:
         render_scan_tab(df, top_n, currency)
 
     with tab_bt:
         render_backtest_tab(df, market, currency)
+
+    with tab_hist:
+        render_history_tab()
 
 
 if __name__ == "__main__":

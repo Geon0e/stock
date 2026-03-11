@@ -36,7 +36,7 @@ BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 # ── 설정 ─────────────────────────────────────────────────────────────────────
-TOP_N         = 10    # 매수/매도 각 상위 N개
+TOP_N         = 5     # 매수/매도 각 상위 N개
 DEFAULT_DAYS  = 60
 MAX_WORKERS   = 5
 REQUEST_DELAY = 0.3

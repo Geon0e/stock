@@ -43,7 +43,7 @@ REFRESH_TOKEN  = os.environ.get("KAKAO_REFRESH_TOKEN",  "")
 CLIENT_SECRET  = os.environ.get("KAKAO_CLIENT_SECRET",  "")
 
 # ── 설정 ─────────────────────────────────────────────────────────────────────
-TOP_N         = 10
+TOP_N         = 5
 DEFAULT_DAYS  = 60
 MAX_WORKERS   = 5
 REQUEST_DELAY = 0.3

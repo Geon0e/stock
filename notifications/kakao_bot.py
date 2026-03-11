@@ -17,7 +17,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-sys.path.insert(0, str(Path(__file__).parent))
+ROOT_DIR = Path(__file__).parent.parent
+sys.path.insert(0, str(ROOT_DIR))
 
 import requests
 import urllib3
@@ -27,7 +28,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ── .env 로드 ─────────────────────────────────────────────────────────────────
 def _load_env():
-    env_path = Path(__file__).parent / ".env"
+    env_path = ROOT_DIR / ".env"
     if env_path.exists():
         for line in env_path.read_text(encoding="utf-8").splitlines():
             line = line.strip()
@@ -162,7 +163,7 @@ class KakaoBot:
 # ── .env 업데이트 헬퍼 ────────────────────────────────────────────────────────
 
 def _update_env(key: str, value: str):
-    env_path = Path(__file__).parent / ".env"
+    env_path = ROOT_DIR / ".env"
     if not env_path.exists():
         return
     lines = env_path.read_text(encoding="utf-8").splitlines()

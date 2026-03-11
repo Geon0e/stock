@@ -24,7 +24,7 @@ import requests
 import urllib3
 urllib3.disable_warnings()
 
-ENV_PATH = Path(__file__).parent / ".env"
+ENV_PATH = Path(__file__).parent.parent / ".env"
 
 
 def _load_env() -> dict:

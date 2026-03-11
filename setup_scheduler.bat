@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 > nul
 echo ========================================
-echo  평일 8:30 카카오톡 리포트 자동 등록
+echo  카카오톡 리포트 자동 스케줄 등록
 echo ========================================
 echo.
 
@@ -20,57 +20,73 @@ echo.
 set SCRIPT_DIR=%~dp0
 set SCRIPT_DIR=%SCRIPT_DIR:~0,-1%
 
-:: 시장 선택
-echo 어떤 시장 리포트를 받으시겠습니까?
-echo   1) KOSPI 200 (기본)
-echo   2) NASDAQ 100
+:: 등록 선택
+echo 어떤 스케줄을 등록하시겠습니까?
+echo   1) KOSPI 200  - 평일 08:30
+echo   2) NASDAQ 100 - 평일 23:00
+echo   3) 둘 다 등록
 echo.
-set /p MARKET_CHOICE="선택 (1 또는 2, 기본=1): "
+set /p CHOICE="선택 (1/2/3): "
 
-if "%MARKET_CHOICE%"=="2" (
-    set MARKET=nasdaq100
-    set TASK_NAME=StockReport_NASDAQ100
-) else (
-    set MARKET=kospi200
-    set TASK_NAME=StockReport_KOSPI200
-)
+if "%CHOICE%"=="1" goto REGISTER_KOSPI
+if "%CHOICE%"=="2" goto REGISTER_NASDAQ
+if "%CHOICE%"=="3" goto REGISTER_BOTH
+goto REGISTER_KOSPI
+
+:REGISTER_KOSPI
+call :DO_REGISTER kospi200 StockReport_KOSPI200 08:30
+goto DONE
+
+:REGISTER_NASDAQ
+call :DO_REGISTER nasdaq100 StockReport_NASDAQ100 23:00
+goto DONE
+
+:REGISTER_BOTH
+call :DO_REGISTER kospi200 StockReport_KOSPI200 08:30
+call :DO_REGISTER nasdaq100 StockReport_NASDAQ100 23:00
+goto DONE
+
+:: ── 등록 함수 ──────────────────────────────────────────────
+:DO_REGISTER
+set _MARKET=%1
+set _TASK=%2
+set _TIME=%3
 
 echo.
-echo [등록] 작업: %TASK_NAME%  /  시장: %MARKET%
+echo [등록] %_TASK%  (%_MARKET%, 평일 %_TIME%)
 
-:: 기존 작업 삭제 (있으면)
-schtasks /delete /tn "%TASK_NAME%" /f > nul 2>&1
+schtasks /delete /tn "%_TASK%" /f > nul 2>&1
 
-:: 작업 스케줄러 등록 (평일 08:30)
 schtasks /create ^
-  /tn "%TASK_NAME%" ^
-  /tr "\"%PYTHON_PATH%\" \"%SCRIPT_DIR%\daily_report.py\" --market %MARKET%" ^
+  /tn "%_TASK%" ^
+  /tr "\"%PYTHON_PATH%\" \"%SCRIPT_DIR%\daily_report.py\" --market %_MARKET%" ^
   /sc WEEKLY ^
   /d MON,TUE,WED,THU,FRI ^
-  /st 08:30 ^
+  /st %_TIME% ^
   /rl HIGHEST ^
   /f
 
 if %errorlevel% equ 0 (
-    echo.
-    echo [완료] 작업 스케줄러 등록 성공!
-    echo.
-    echo  - 작업명  : %TASK_NAME%
-    echo  - 시장    : %MARKET%
-    echo  - 실행    : 평일 오전 08:30
-    echo  - Python  : %PYTHON_PATH%
-    echo  - 스크립트: %SCRIPT_DIR%\daily_report.py
-    echo.
-    echo [테스트] 지금 즉시 실행하려면:
-    echo   python "%SCRIPT_DIR%\daily_report.py" --market %MARKET% --now
-    echo.
-    echo [제거]   등록된 스케줄을 삭제하려면:
-    echo   schtasks /delete /tn "%TASK_NAME%" /f
+    echo [완료] %_TASK% 등록 성공 - 평일 %_TIME% 자동 실행
 ) else (
-    echo.
-    echo [오류] 작업 스케줄러 등록 실패
-    echo        관리자 권한으로 실행해 주세요 (마우스 우클릭 → 관리자 권한으로 실행)
+    echo [오류] %_TASK% 등록 실패 - 관리자 권한으로 실행해 주세요
 )
+goto :eof
 
+:: ── 완료 ───────────────────────────────────────────────────
+:DONE
+echo.
+echo ========================================
+echo [테스트] 즉시 실행:
+echo   python "%SCRIPT_DIR%\daily_report.py" --market kospi200 --now
+echo   python "%SCRIPT_DIR%\daily_report.py" --market nasdaq100 --now
+echo.
+echo [확인]   작업 스케줄러 확인:
+echo   Win+R → taskschd.msc
+echo.
+echo [제거]   스케줄 삭제:
+echo   schtasks /delete /tn "StockReport_KOSPI200" /f
+echo   schtasks /delete /tn "StockReport_NASDAQ100" /f
+echo ========================================
 echo.
 pause

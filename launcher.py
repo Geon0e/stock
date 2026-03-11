@@ -43,6 +43,7 @@ def main():
         "--server.port", str(PORT),
         "--server.headless", "true",
         "--browser.gatherUsageStats", "false",
+        "--global.developmentMode", "false",
     ]
     sys.exit(stcli.main())
 

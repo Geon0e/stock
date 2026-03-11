@@ -1,15 +1,18 @@
-pykrx>=1.0.45
-FinanceDataReader>=0.9.50
-pandas>=2.0.0
-numpy>=1.24.0
-matplotlib>=3.7.0
-seaborn>=0.12.0
+# 웹 대시보드
+streamlit>=1.32.0
 plotly>=5.15.0
-ta>=0.10.2
-tqdm>=4.65.0
-python-dateutil>=2.8.2
 
-# 네이버 증권 크롤러
+# 데이터 수집
 requests>=2.31.0
 beautifulsoup4>=4.12.0
 lxml>=4.9.0
+urllib3>=2.0.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# 한국 주식 (없어도 네이버 크롤러로 동작)
+pykrx>=1.0.45
+FinanceDataReader>=0.9.50
+
+# 기타
+python-dateutil>=2.8.2

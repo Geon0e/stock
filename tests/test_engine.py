@@ -11,8 +11,8 @@ try:
     import pytest
 except ImportError:
     pytest = None
-from engine import BacktestEngine, Portfolio
-from strategies.base import BaseStrategy
+from backtest import BacktestEngine, Portfolio
+from backtest.strategies.base import BaseStrategy
 
 
 def make_sample_data(n=100, start_price=50000, ticker="TEST"):

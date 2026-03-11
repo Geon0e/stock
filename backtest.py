@@ -20,14 +20,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from data.fetcher import get_ohlcv
-from engine import BacktestEngine
-from strategies import (
+from backtest import BacktestEngine
+from backtest.strategies import (
     MovingAverageCrossStrategy,
     RSIStrategy,
     MomentumStrategy,
     BollingerBandStrategy,
 )
-from visualizer import plot_equity_curve, plot_price_with_signals, plot_monthly_returns
+from backtest.visualizer import plot_equity_curve, plot_price_with_signals, plot_monthly_returns
 
 
 # ===================== 설정 =====================
@@ -125,7 +125,7 @@ def compare_strategies():
 
 def custom_strategy_example():
     """커스텀 전략 예시"""
-    from strategies.base import BaseStrategy
+    from backtest.strategies.base import BaseStrategy
     import pandas as pd
 
     class MyCustomStrategy(BaseStrategy):

@@ -37,7 +37,7 @@ except ImportError:
     FDR_AVAILABLE = False
 
 try:
-    from data.naver_crawler import NaverFinanceCrawler as _NaverCrawler
+    from data.crawler import NaverFinanceCrawler as _NaverCrawler
     NAVER_AVAILABLE = True
 except ImportError:
     NAVER_AVAILABLE = False

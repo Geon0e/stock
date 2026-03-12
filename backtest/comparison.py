@@ -1,11 +1,11 @@
 """
-V1 vs V2 vs Buy & Hold 비교 프레임워크
+백테스팅 비교 / Walk-Forward 분석 프레임워크
 
 주요 기능:
-  - 동일 데이터에서 세 가지(V1·V2·B&H)를 동시 실행
-  - 다기간(1Y·2Y·3Y) 일관성 검증
-  - 슬리피지 민감도 테스트 (1x·2x·3x)
-  - 로버스트니스 체크리스트 (5개 기준) 자동 평가
+  - 퀀트 성과지표: Profit Factor / Expectancy / Sortino / Calmar
+  - Walk-Forward Analysis: 롤링 Train/Test 창으로 과최적화 검증
+  - 슬리피지 민감도 테스트
+  - 로버스트니스 체크리스트
 """
 
 from __future__ import annotations
@@ -14,89 +14,102 @@ import contextlib
 import io
 import numpy as np
 import pandas as pd
+from typing import Optional
 
-from config import COMMISSION_RATE, TAX_RATE, SLIPPAGE_RATE
-
-
-# ── 거래일 기준 기간 ──────────────────────────────────────────────────────────
-PERIOD_LABELS = {252: "1년", 504: "2년", 756: "3년"}
+from config import COMMISSION_RATE, TAX_RATE, SLIPPAGE_BASE
 
 
-# ── Buy & Hold 벤치마크 ───────────────────────────────────────────────────────
+# ── 공통 성과 지표 계산 ───────────────────────────────────────────────────
 
 def _calc_metrics(equity: pd.Series, orders_df: pd.DataFrame, capital: float) -> dict:
-    """공통 성과 지표 계산"""
+    """퀀트 표준 성과 지표 (Sharpe / Sortino / Calmar / Profit Factor / Expectancy)"""
     if equity.empty or len(equity) < 2:
         return {}
 
     returns = equity.pct_change().dropna()
+    days    = (equity.index[-1] - equity.index[0]).days
+    years   = max(days / 365, 0.01)
+
     total_return = (equity.iloc[-1] / equity.iloc[0] - 1) * 100
-    days  = (equity.index[-1] - equity.index[0]).days
-    years = max(days / 365, 0.01)
-    cagr  = ((equity.iloc[-1] / equity.iloc[0]) ** (1 / years) - 1) * 100
+    cagr         = ((equity.iloc[-1] / equity.iloc[0]) ** (1 / years) - 1) * 100
 
-    roll_max  = equity.cummax()
-    drawdown  = (equity - roll_max) / roll_max * 100
-    mdd       = drawdown.min()
+    roll_max = equity.cummax()
+    drawdown = (equity - roll_max) / roll_max * 100
+    mdd      = drawdown.min()
 
-    rf = 0.035 / 252
+    rf     = 0.035 / 252
     excess = returns - rf
     sharpe = (excess.mean() / excess.std() * np.sqrt(252)
               if excess.std() > 0 else 0.0)
 
-    n_trades = 0
-    win_rate = 0.0
+    downside = returns[returns < rf]
+    sortino  = (((returns.mean() - rf) / downside.std() * np.sqrt(252))
+                if len(downside) > 1 and downside.std() > 0 else 0.0)
+
+    calmar = abs(cagr / mdd) if mdd != 0 else 0.0
+
+    # 거래 통계
+    wins, losses = [], []
+    n_trades     = 0
     if not orders_df.empty and "action" in orders_df.columns:
-        n_trades = len(orders_df)
         buys  = orders_df[orders_df["action"] == "BUY"]
         sells = orders_df[orders_df["action"] == "SELL"]
-        trades = []
+        n_trades = len(orders_df)
         for ticker in orders_df["ticker"].unique():
-            tb = buys[buys["ticker"] == ticker]["price"].tolist()
+            tb = buys[buys["ticker"]   == ticker]["price"].tolist()
             ts = sells[sells["ticker"] == ticker]["price"].tolist()
             for b, s in zip(tb, ts):
-                trades.append(s > b)
-        win_rate = sum(trades) / len(trades) * 100 if trades else 0.0
+                pnl = (s - b) / b * 100
+                (wins if pnl > 0 else losses).append(pnl)
 
-    trades_per_year = n_trades / max(years, 0.1)
+    n_closed = len(wins) + len(losses)
+    win_rate = len(wins) / n_closed * 100 if n_closed > 0 else 0.0
+
+    total_gain    = sum(wins)
+    total_loss    = abs(sum(losses))
+    profit_factor = (total_gain / total_loss if total_loss > 0
+                     else (10.0 if total_gain > 0 else 0.0))
+    avg_win   = np.mean(wins)         if wins   else 0.0
+    avg_loss  = abs(np.mean(losses))  if losses else 0.0
+    expectancy = (win_rate / 100 * avg_win) - ((1 - win_rate / 100) * avg_loss)
 
     return {
-        "총수익률(%)":           round(total_return, 2),
-        "CAGR(%)":              round(cagr, 2),
-        "MDD(%)":               round(mdd, 2),
-        "샤프비율":              round(sharpe, 2),
-        "거래횟수":              n_trades,
-        "연간거래횟수":           round(trades_per_year, 1),
-        "승률(%)":               round(win_rate, 1),
-        "최종자본":              round(equity.iloc[-1]),
+        "총수익률(%)":       round(total_return, 2),
+        "CAGR(%)":          round(cagr, 2),
+        "MDD(%)":           round(mdd, 2),
+        "샤프비율":          round(sharpe, 2),
+        "소르티노비율":       round(sortino, 2),
+        "칼마비율":          round(calmar, 2),
+        "Profit Factor":    round(profit_factor, 2),
+        "Expectancy(%)":    round(expectancy, 2),
+        "거래횟수":          n_trades,
+        "연간거래횟수":       round(n_trades / max(years, 0.1), 1),
+        "승률(%)":           round(win_rate, 1),
+        "최종자본":          round(equity.iloc[-1]),
     }
 
 
+# ── Buy & Hold 벤치마크 ───────────────────────────────────────────────────
+
 def calc_buyhold(df: pd.DataFrame, ticker: str, capital: float,
                  commission_rate: float = COMMISSION_RATE,
-                 tax_rate: float = TAX_RATE,
-                 slippage_rate: float = SLIPPAGE_RATE) -> dict:
+                 tax_rate:        float = TAX_RATE,
+                 slippage_rate:   float = SLIPPAGE_BASE) -> dict:
     """첫날 매수 → 마지막날 매도 Buy & Hold"""
     if df is None or df.empty or len(df) < 2:
         return {}
-
-    close = df["Close"]
+    close      = df["Close"]
     buy_price  = close.iloc[0]  * (1 + slippage_rate)
     sell_price = close.iloc[-1] * (1 - slippage_rate)
-
-    buy_comm  = buy_price * commission_rate
-    qty = int(capital / (buy_price + buy_comm))
+    buy_comm   = buy_price * commission_rate
+    qty        = int(capital / (buy_price + buy_comm))
     if qty <= 0:
         return {}
-
     cost     = (buy_price + buy_comm) * qty
     proceeds = sell_price * qty * (1 - commission_rate - tax_rate)
     cash_end = (capital - cost) + proceeds
-
-    # 자산 곡선 (보유 중 시가 기준)
-    equity = (capital - cost) + close / close.iloc[0] * (buy_price * qty)
+    equity   = (capital - cost) + close / close.iloc[0] * (buy_price * qty)
     equity.iloc[-1] = cash_end
-
     orders_df = pd.DataFrame([
         {"date": df.index[0],  "ticker": ticker, "action": "BUY",  "price": buy_price},
         {"date": df.index[-1], "ticker": ticker, "action": "SELL", "price": sell_price},
@@ -106,13 +119,12 @@ def calc_buyhold(df: pd.DataFrame, ticker: str, capital: float,
     return m
 
 
-# ── 전략 실행 헬퍼 ────────────────────────────────────────────────────────────
+# ── 전략 실행 헬퍼 ────────────────────────────────────────────────────────
 
 def _run_engine(df: pd.DataFrame, ticker: str, strategy,
                 capital: float, commission_rate: float,
                 tax_rate: float, slippage_rate: float) -> dict:
     from backtest.engine import BacktestEngine
-
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         engine = BacktestEngine(
@@ -124,210 +136,232 @@ def _run_engine(df: pd.DataFrame, ticker: str, strategy,
         )
         engine.run(strategy)
         engine.report()
-
     if engine.results is None or engine.results.empty:
         return {}
-
     equity    = engine.results["total_value"]
     orders_df = engine.get_orders()
     m = _calc_metrics(equity, orders_df, capital)
-    m["전략"] = strategy.name()
-    m["_equity"]    = equity      # 차트용
-    m["_orders_df"] = orders_df   # 차트용
+    m["전략"]      = strategy.name()
+    m["_equity"]   = equity
+    m["_orders_df"] = orders_df
     return m
 
 
-# ── 비교 메인 ─────────────────────────────────────────────────────────────────
+# ── Walk-Forward Analysis ─────────────────────────────────────────────────
 
-def run_comparison(
-    df: pd.DataFrame,
-    ticker: str,
-    capital: float = 10_000_000,
+def walk_forward_test(
+    ohlcv:       pd.DataFrame,
+    ticker:      str,
+    capital:     float = 10_000_000,
+    train_years: int   = 2,
+    test_years:  int   = 1,
     commission_rate: float = COMMISSION_RATE,
-    tax_rate: float = TAX_RATE,
-    base_slippage: float = SLIPPAGE_RATE,
-    period_days: list[int] | None = None,
-    slippage_multipliers: list[float] | None = None,
+    tax_rate:        float = TAX_RATE,
+    slippage_rate:   float = SLIPPAGE_BASE,
+    market_df:       Optional[pd.DataFrame] = None,
+    atr_stop_mult:   float = 2.0,
 ) -> dict:
     """
-    V1 vs V2 vs B&H 전면 비교
+    Walk-Forward Analysis (WFA):
+      - Train window (warmup): train_years — 지표 워밍업용
+      - Test  window (OOS)  : test_years  — 실제 성과 측정
+      - 매 test_years마다 1 step 롤링
+
+    Args:
+        ohlcv:       종목 OHLCV DataFrame
+        ticker:      종목코드
+        train_years: 워밍업 기간 (년)
+        test_years:  OOS 테스트 기간 (년)
+        market_df:   시장 레짐 필터용 데이터 (선택)
 
     Returns:
         {
-          "multi_period":  DataFrame  — 기간별 성과 테이블,
-          "slippage_sens": DataFrame  — 슬리피지 민감도 테이블,
-          "robustness":    list[dict] — 로버스트니스 체크리스트,
-          "equity_full":   {v1, v2, bh} — 전체 기간 자산 곡선,
-          "orders":        {v1, v2} — 매매 내역,
-          "summary":       {v1, v2, bh} — 전체 기간 지표,
+          "periods":   list[dict],      # 기간별 OOS 성과
+          "oos_equity": pd.Series,      # 이어붙인 OOS 자산 곡선
+          "summary":   dict,            # 집계 통계
+          "error":     str (실패 시),
         }
     """
-    from backtest.strategies.moving_average import MovingAverageCrossStrategy
     from backtest.strategies.moving_average_v2 import MovingAverageCrossV2Strategy
 
-    if period_days is None:
-        period_days = [252, 504, 756]
-    if slippage_multipliers is None:
-        slippage_multipliers = [1.0, 2.0, 3.0]
+    TRADING_DAYS_PER_YEAR = 252
+    train_days  = train_years * TRADING_DAYS_PER_YEAR
+    test_days   = test_years  * TRADING_DAYS_PER_YEAR
+    min_bars    = train_days + test_days
 
-    # 사용 가능한 기간으로 필터
-    period_days = [p for p in period_days if len(df) >= p]
+    if len(ohlcv) < min_bars:
+        return {"error": f"데이터 부족 ({len(ohlcv)}거래일, 최소 {min_bars}일 필요)"}
 
-    # ── 전체 기간 실행 ────────────────────────────────────────────────────
-    def _v1(d): return _run_engine(d, ticker,
-        MovingAverageCrossStrategy(ticker, 5, 20),
-        capital, commission_rate, tax_rate, base_slippage)
+    periods:     list[dict]     = []
+    oos_parts:   list[pd.Series] = []
 
-    def _v2(d): return _run_engine(d, ticker,
-        MovingAverageCrossV2Strategy(ticker, 5, 20, 60),
-        capital, commission_rate, tax_rate, base_slippage)
+    step = 0
+    while True:
+        # 각 OOS 창: 워밍업(train_days) 포함 전체 슬라이스
+        context_start = step * test_days
+        test_start    = context_start + train_days
+        test_end      = test_start + test_days
 
-    def _bh(d): return calc_buyhold(d, ticker, capital,
-        commission_rate, tax_rate, base_slippage)
+        if test_end > len(ohlcv):
+            break
 
-    r_v1 = _v1(df)
-    r_v2 = _v2(df)
-    r_bh = _bh(df)
+        # 전체 슬라이스 (워밍업 포함)
+        full_slice = ohlcv.iloc[context_start:test_end]
+        # OOS 구간 날짜
+        oos_start_date = ohlcv.index[test_start]
 
-    eq_v1 = r_v1.pop("_equity",    pd.Series(dtype=float))
-    eq_v2 = r_v2.pop("_equity",    pd.Series(dtype=float))
-    od_v1 = r_v1.pop("_orders_df", pd.DataFrame())
-    od_v2 = r_v2.pop("_orders_df", pd.DataFrame())
+        strategy = MovingAverageCrossV2Strategy(
+            ticker,
+            short_window=5, long_window=20, trend_window=60,
+            invest_pct=0.5,
+            market_df=market_df,
+            atr_stop_mult=atr_stop_mult,
+        )
 
-    # ── 다기간 비교 ───────────────────────────────────────────────────────
-    rows = []
-    display_cols = ["CAGR(%)", "MDD(%)", "샤프비율", "연간거래횟수", "승률(%)"]
-    for pd_days in period_days:
-        sub = df.tail(pd_days)
-        label = PERIOD_LABELS.get(pd_days, f"{pd_days}일")
-        for name, fn in [("V1 (MA5/20)", lambda d: _v1(d)),
-                         ("V2 (MA5/20/60+RSI)", lambda d: _v2(d)),
-                         ("Buy & Hold", lambda d: _bh(d))]:
-            m = fn(sub)
-            m.pop("_equity", None); m.pop("_orders_df", None)
-            row = {"기간": label, "전략": name}
-            for c in display_cols:
-                row[c] = m.get(c, None)
-            rows.append(row)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            engine = BacktestEngine_lazy(full_slice, ticker, capital,
+                                         commission_rate, tax_rate, slippage_rate, strategy)
 
-    multi_df = pd.DataFrame(rows)
+        if engine is None or engine.results is None:
+            step += 1
+            continue
 
-    # ── 슬리피지 민감도 ───────────────────────────────────────────────────
-    slip_rows = []
-    for mult in slippage_multipliers:
-        slip = base_slippage * mult
-        for name, fn in [
-            ("V1", lambda d, s: _run_engine(d, ticker,
-                MovingAverageCrossStrategy(ticker, 5, 20),
-                capital, commission_rate, tax_rate, s)),
-            ("V2", lambda d, s: _run_engine(d, ticker,
-                MovingAverageCrossV2Strategy(ticker, 5, 20, 60),
-                capital, commission_rate, tax_rate, s)),
-        ]:
-            m = fn(df, slip)
-            m.pop("_equity", None); m.pop("_orders_df", None)
-            slip_rows.append({
-                "슬리피지": f"×{mult:.0f} ({slip*100:.3f}%)",
-                "전략": name,
-                "CAGR(%)": m.get("CAGR(%)", None),
-                "MDD(%)":  m.get("MDD(%)", None),
-                "거래횟수": m.get("거래횟수", None),
-            })
+        # OOS 구간만 추출
+        oos_equity = engine.results["total_value"][engine.results.index >= oos_start_date]
+        if oos_equity.empty:
+            step += 1
+            continue
 
-    slip_df = pd.DataFrame(slip_rows)
+        orders_df = engine.get_orders()
+        # OOS 구간 주문만 필터
+        if not orders_df.empty and "date" in orders_df.columns:
+            orders_df = orders_df[orders_df["date"] >= oos_start_date]
 
-    # ── 로버스트니스 체크리스트 ───────────────────────────────────────────
-    robustness = _robustness_check(r_v1, r_v2, r_bh, multi_df, slip_df, base_slippage)
+        m = _calc_metrics(oos_equity, orders_df, float(oos_equity.iloc[0]))
+        if not m:
+            step += 1
+            continue
+
+        periods.append({
+            "기간":     f"{oos_start_date.date()}~{ohlcv.index[test_end-1].date()}",
+            "CAGR(%)":  m.get("CAGR(%)", 0),
+            "MDD(%)":   m.get("MDD(%)", 0),
+            "샤프비율":  m.get("샤프비율", 0),
+            "Profit Factor": m.get("Profit Factor", 0),
+            "승률(%)":  m.get("승률(%)", 0),
+            "거래횟수":  m.get("거래횟수", 0),
+        })
+        oos_parts.append(oos_equity / oos_equity.iloc[0])
+        step += 1
+
+    if not periods:
+        return {"error": "유효한 OOS 기간 없음 (데이터 부족)"}
+
+    # OOS 자산 곡선 이어붙이기 (각 구간을 정규화=100 후 체인)
+    oos_equity_stitched = _stitch_equity(oos_parts, capital)
+
+    cagrs    = [p.get("CAGR(%)", 0) or 0 for p in periods]
+    sharpes  = [p.get("샤프비율", 0) or 0 for p in periods]
+    pf_list  = [p.get("Profit Factor", 0) or 0 for p in periods]
+    positive = sum(1 for c in cagrs if c > 0)
+
+    summary = {
+        "검증 기간 수":     len(periods),
+        "수익 기간 비율(%)": round(positive / len(periods) * 100, 1),
+        "평균 CAGR(%)":    round(float(np.mean(cagrs)), 2),
+        "평균 샤프비율":    round(float(np.mean(sharpes)), 2),
+        "평균 PF":         round(float(np.mean(pf_list)), 2),
+    }
 
     return {
-        "multi_period":  multi_df,
-        "slippage_sens": slip_df,
-        "robustness":    robustness,
-        "equity_full":   {"v1": eq_v1, "v2": eq_v2, "bh": None},
-        "orders":        {"v1": od_v1, "v2": od_v2},
-        "summary":       {"v1": r_v1, "v2": r_v2, "bh": r_bh},
+        "periods":    periods,
+        "oos_equity": oos_equity_stitched,
+        "summary":    summary,
     }
 
 
-# ── 로버스트니스 체크 ─────────────────────────────────────────────────────────
+def _stitch_equity(parts: list[pd.Series], base_capital: float) -> pd.Series:
+    """OOS 구간별 자산 곡선을 이어붙임"""
+    if not parts:
+        return pd.Series(dtype=float)
+    result = []
+    current_value = base_capital
+    for part in parts:
+        scaled = part * current_value
+        result.append(scaled)
+        current_value = float(scaled.iloc[-1])
+    return pd.concat(result)
 
-def _robustness_check(v1: dict, v2: dict, bh: dict,
-                      multi_df: pd.DataFrame,
-                      slip_df: pd.DataFrame,
-                      base_slippage: float) -> list[dict]:
-    """
-    5개 기준으로 V1·V2 각각 pass/fail 평가
-    Returns: [{"항목": ..., "기준": ..., "V1": pass/fail/val, "V2": ...}, ...]
-    """
+
+def BacktestEngine_lazy(df, ticker, capital, commission_rate, tax_rate, slippage_rate, strategy):
+    """내부 헬퍼: 엔진 실행 후 반환"""
+    from backtest.engine import BacktestEngine
+    import contextlib, io
+    try:
+        engine = BacktestEngine(
+            data={ticker: df},
+            initial_capital=capital,
+            commission_rate=commission_rate,
+            tax_rate=tax_rate,
+            slippage_rate=slippage_rate,
+        )
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            engine.run(strategy)
+            engine.report()
+        return engine
+    except Exception:
+        return None
+
+
+# ── 로버스트니스 체크리스트 ───────────────────────────────────────────────
+
+def robustness_check(v2: dict, bh: dict,
+                     multi_df: pd.DataFrame,
+                     slip_df: pd.DataFrame,
+                     base_slippage: float) -> list[dict]:
+    """V2 전략 로버스트니스 5개 항목 평가"""
     results = []
 
-    def _chk(label, criterion, v1_ok, v2_ok, v1_val="", v2_val=""):
+    def _chk(label, criterion, ok, val=""):
         results.append({
-            "항목": label,
-            "기준": criterion,
-            "V1":  ("✅ " + str(v1_val)) if v1_ok else ("❌ " + str(v1_val)),
-            "V2":  ("✅ " + str(v2_val)) if v2_ok else ("❌ " + str(v2_val)),
+            "항목":  label,
+            "기준":  criterion,
+            "결과":  ("✅ " + str(val)) if ok else ("❌ " + str(val)),
         })
 
     bh_cagr = bh.get("CAGR(%)", 0) or 0
-
-    # 1. CAGR vs B&H
-    v1_cagr = v1.get("CAGR(%)", 0) or 0
     v2_cagr = v2.get("CAGR(%)", 0) or 0
     _chk("CAGR > B&H + 2%p",
          f"B&H CAGR = {bh_cagr:+.1f}%",
-         v1_cagr >= bh_cagr + 2,
          v2_cagr >= bh_cagr + 2,
-         f"{v1_cagr:+.1f}%", f"{v2_cagr:+.1f}%")
+         f"{v2_cagr:+.1f}%")
 
-    # 2. MDD <= B&H MDD × 1.1
     bh_mdd = bh.get("MDD(%)", -999) or -999
-    v1_mdd = v1.get("MDD(%)", -999) or -999
     v2_mdd = v2.get("MDD(%)", -999) or -999
-    threshold = bh_mdd * 1.1  # bh_mdd 음수이므로 × 1.1 → 더 작은 음수 (더 나쁨)
     _chk("MDD ≤ B&H MDD",
          f"B&H MDD = {bh_mdd:.1f}%",
-         v1_mdd >= threshold,
-         v2_mdd >= threshold,
-         f"{v1_mdd:.1f}%", f"{v2_mdd:.1f}%")
+         v2_mdd >= bh_mdd * 1.1,
+         f"{v2_mdd:.1f}%")
 
-    # 3. 연간 거래횟수 <= 24
-    v1_tpy = v1.get("연간거래횟수", 999) or 999
     v2_tpy = v2.get("연간거래횟수", 999) or 999
     _chk("연간 거래 ≤ 24회",
          "과도한 매매 = 비용 누적",
-         v1_tpy <= 24, v2_tpy <= 24,
-         f"{v1_tpy:.0f}회", f"{v2_tpy:.0f}회")
+         v2_tpy <= 24,
+         f"{v2_tpy:.0f}회")
 
-    # 4. 슬리피지 2배에도 CAGR 양수
-    slip2x = slip_df[slip_df["슬리피지"].str.startswith("×2")]
-    v1_s2  = slip2x[slip2x["전략"] == "V1"]["CAGR(%)"].values
-    v2_s2  = slip2x[slip2x["전략"] == "V2"]["CAGR(%)"].values
-    v1_s2v = float(v1_s2[0]) if len(v1_s2) else 0
-    v2_s2v = float(v2_s2[0]) if len(v2_s2) else 0
-    _chk("슬리피지 2배 후 CAGR > 0",
-         "비용 내성 확인",
-         v1_s2v > 0, v2_s2v > 0,
-         f"{v1_s2v:+.1f}%", f"{v2_s2v:+.1f}%")
+    # 슬리피지 2배에서도 CAGR > 0
+    if not slip_df.empty and "슬리피지" in slip_df.columns:
+        slip2x = slip_df[slip_df["슬리피지"].str.startswith("×2")]
+        v2_s2v = float(slip2x["CAGR(%)"].values[0]) if len(slip2x) else 0
+        _chk("슬리피지 2배 후 CAGR > 0", "비용 내성 확인", v2_s2v > 0, f"{v2_s2v:+.1f}%")
 
-    # 5. 다기간 일관성 — 2개 이상 기간에서 CAGR > B&H
-    if not multi_df.empty and "기간" in multi_df.columns:
-        periods = multi_df["기간"].unique()
-        v1_wins, v2_wins = 0, 0
-        for p in periods:
-            sub = multi_df[multi_df["기간"] == p]
-            bh_c = sub[sub["전략"] == "Buy & Hold"]["CAGR(%)"].values
-            v1_c = sub[sub["전략"] == "V1 (MA5/20)"]["CAGR(%)"].values
-            v2_c = sub[sub["전략"] == "V2 (MA5/20/60+RSI)"]["CAGR(%)"].values
-            if len(bh_c) and len(v1_c) and v1_c[0] is not None:
-                v1_wins += int(float(v1_c[0]) > float(bh_c[0]))
-            if len(bh_c) and len(v2_c) and v2_c[0] is not None:
-                v2_wins += int(float(v2_c[0]) > float(bh_c[0]))
-        n_periods = len(periods)
-        _chk(f"다기간 일관성 ({n_periods}개 기간 중 과반)",
-             "최근 1년만 좋으면 탈락",
-             v1_wins > n_periods // 2,
-             v2_wins > n_periods // 2,
-             f"{v1_wins}/{n_periods}", f"{v2_wins}/{n_periods}")
+    # Profit Factor > 1.2
+    v2_pf = v2.get("Profit Factor", 0) or 0
+    _chk("Profit Factor > 1.2",
+         "총이익 / 총손실",
+         v2_pf > 1.2,
+         f"{v2_pf:.2f}")
 
     return results

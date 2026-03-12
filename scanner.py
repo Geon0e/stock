@@ -84,6 +84,8 @@ def _build_row(ticker, name, df, result):
         "name":    name,
         "signal":  result["signal"],
         "score":   result["score"],
+        "regime":  result.get("regime", "중립"),
+        "adx":     result.get("adx"),
         "details": result["details"],
         "close":   df["Close"].iloc[-1],
         "ret5":    (df["Close"].iloc[-1] / df["Close"].iloc[-5]  - 1) * 100 if len(df) >= 5  else 0,
@@ -127,23 +129,37 @@ def _print_results(df, top, market_label, currency):
     section(f"③ 매도 추천 상위 {top}개  (점수 낮은 순)")
     _print_table(sell_df.sort_values("score").head(top), currency)
 
-    section("④ 전략별 상세 (매수 추천 TOP 5)")
-    for _, row in buy_df.head(5).iterrows():
-        print(f"\n  [{row['ticker']}] {row['name']}  |  점수: {row['score']}/100")
+    section("④ 전략별 상세 (전체 종목)")
+    for _, row in df.iterrows():
+        regime_str = row.get("regime", "중립")
+        adx_str    = f"ADX={row['adx']:.1f}" if row.get("adx") is not None else "ADX=N/A"
+        sig_label  = {"BUY": "★매수", "SELL": "▼매도", "HOLD": "─관망"}.get(row["signal"], row["signal"])
+        print(f"\n  [{row['ticker']}] {row['name']}  |  {sig_label}  점수: {row['score']}/100  |  시장: {regime_str} ({adx_str})")
         for d in row["details"]:
-            bar = "█" * (d["score"] // 10) + "░" * (10 - d["score"] // 10)
-            print(f"    {d['name']:<12}  {d['signal']:<4}  [{bar}] {d['score']:3d}  {d['reason']}")
+            bar    = "█" * (d["score"] // 10) + "░" * (10 - d["score"] // 10)
+            w_str  = f"×{d['weight']:.1f}"
+            print(f"    {d['name']:<12}  {d['signal']:<4}  [{bar}] {d['score']:3d}  {w_str}  {d['reason']}")
 
-    section("⑤ 신호 분포")
+    section("⑤ 신호 분포 / 시장 상태")
     for sig in ("BUY", "HOLD", "SELL"):
         count = len(df[df["signal"] == sig])
         bar   = "█" * (count * 30 // max(total, 1))
         print(f"  {sig:<4}  {count:>3}개  {bar}")
+    print()
+    for regime in ("추세장", "횡보장", "중립"):
+        if "regime" in df.columns:
+            count = len(df[df["regime"] == regime])
+            print(f"  {regime:<4}  {count:>3}개")
 
 
 def _save_csv(df, market, out):
-    save_df = df[["ticker", "name", "signal", "score", "close", "ret5", "ret20"]].copy()
-    save_df.columns = ["종목코드", "종목명", "신호", "점수", "종가", "5일수익률", "20일수익률"]
+    cols = ["ticker", "name", "signal", "score", "regime", "adx", "close", "ret5", "ret20"]
+    cols = [c for c in cols if c in df.columns]
+    save_df = df[cols].copy()
+    col_names = {"ticker": "종목코드", "name": "종목명", "signal": "신호", "score": "점수",
+                 "regime": "시장상태", "adx": "ADX", "close": "종가",
+                 "ret5": "5일수익률", "ret20": "20일수익률"}
+    save_df.columns = [col_names.get(c, c) for c in cols]
     if out:
         Path(out).parent.mkdir(parents=True, exist_ok=True)
         path = out

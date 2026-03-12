@@ -87,3 +87,78 @@ def fetch_news(ticker: str, market: str, max_articles: int = 5) -> list:
         return get_naver_news(ticker, max_articles)
     else:
         return get_yahoo_news(ticker, max_articles)
+
+
+def get_naver_section_news(section: str = "economy", max_articles: int = 15) -> list:
+    """
+    네이버 뉴스 섹션에서 헤드라인 수집
+
+    section: "economy" (경제/sid1=101) | "world" (세계/sid1=104)
+    Returns: [{"title": str, "description": str, "pubDate": str}]
+    """
+    section_id = {"economy": "101", "world": "104"}.get(section, "101")
+
+    # 1차 시도: 네이버 뉴스 RSS
+    rss_urls = [
+        f"https://news.naver.com/main/rss/section.nhn?sectionId={section_id}",
+        f"https://rss.naver.com/main/rss/section/news/section{section_id}.xml",
+    ]
+    for rss_url in rss_urls:
+        try:
+            resp = requests.get(rss_url, headers=HEADERS, timeout=8, verify=False)
+            if resp.status_code == 200 and "<item>" in resp.text:
+                soup = BeautifulSoup(resp.content, "xml")
+                articles = []
+                for item in soup.select("item")[:max_articles]:
+                    title = item.find("title")
+                    desc  = item.find("description")
+                    pub   = item.find("pubDate")
+                    if not title:
+                        continue
+                    articles.append({
+                        "title":       title.get_text(strip=True),
+                        "description": desc.get_text(strip=True) if desc else "",
+                        "pubDate":     pub.get_text(strip=True) if pub else "",
+                    })
+                if articles:
+                    return articles
+        except Exception:
+            continue
+
+    # 2차 시도: 네이버 뉴스 섹션 페이지 직접 크롤링
+    try:
+        url = f"https://news.naver.com/main/main.nhn?mode=LSD&mid=shm&sid1={section_id}"
+        resp = requests.get(url, headers=HEADERS, timeout=10, verify=False)
+        resp.encoding = "utf-8"
+        soup = BeautifulSoup(resp.text, "lxml")
+        articles = []
+        for a_tag in soup.select("a._NM_cnt_item, .sh_text_headline, .cluster_text_headline, a[class*=headline]"):
+            title = a_tag.get_text(strip=True)
+            if title and len(title) > 10:
+                articles.append({"title": title, "description": "", "pubDate": ""})
+                if len(articles) >= max_articles:
+                    break
+        # fallback: 일반 링크 텍스트 수집
+        if not articles:
+            for a_tag in soup.select(".cluster_body a, .cluster_text a"):
+                title = a_tag.get_text(strip=True)
+                if title and len(title) > 10 and not any(t["title"] == title for t in articles):
+                    articles.append({"title": title, "description": "", "pubDate": ""})
+                    if len(articles) >= max_articles:
+                        break
+        return articles
+    except Exception as e:
+        print(f"[뉴스] 네이버 {section} 섹션 수집 실패: {e}")
+        return []
+
+
+def fetch_market_news(max_articles: int = 15) -> dict:
+    """
+    경제 + 세계 탭 뉴스를 함께 수집
+
+    Returns: {"economy": [...], "world": [...]}
+    """
+    return {
+        "economy": get_naver_section_news("economy", max_articles),
+        "world":   get_naver_section_news("world",   max_articles),
+    }

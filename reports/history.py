@@ -37,7 +37,13 @@ def save_report(market: str, channel: str, df, top_n: int = 5) -> Path:
 
     def _rows(sub, n):
         cols = ["ticker", "name", "score", "signal", "close", "ret5", "ret20"]
-        return sub.head(n)[cols].round(2).to_dict("records")
+        if "open" in sub.columns:
+            cols.insert(4, "open")
+        rows = sub.head(n)[cols].round(2).to_dict("records")
+        if "open" in sub.columns:
+            for r in rows:
+                r["open_price"] = r.pop("open")
+        return rows
 
     record = {
         "sent_at": time_str,
@@ -65,6 +71,63 @@ def save_report(market: str, channel: str, df, top_n: int = 5) -> Path:
         json.dump(records, f, ensure_ascii=False, indent=2)
 
     return path
+
+
+def update_eod_performance(market: str, date_str: str = None) -> bool:
+    """
+    추천 종목의 당일 시가/종가/수익률을 업데이트.
+    다음 날 아침 리포트 실행 시 전날 성과를 채워 넣음.
+
+    저장 필드 (top_buy 각 항목에 추가):
+        eod_open      : 당일 시가
+        eod_close     : 당일 종가
+        eod_pct_change: (종가 - 시가) / 시가 * 100
+    """
+    market = _normalize_market(market)
+    if date_str is None:
+        date_str = datetime.now().strftime("%Y-%m-%d")
+
+    path = HISTORY_DIR / f"{date_str}_{market}.json"
+    if not path.exists():
+        return False
+
+    records = load_file(path)
+    if not records:
+        return False
+
+    updated = False
+    for record in records:
+        for item in record.get("top_buy", []):
+            ticker = item.get("ticker")
+            if not ticker or "eod_close" in item:
+                continue  # 이미 업데이트됨
+            try:
+                if market == "kospi200":
+                    from data.fetcher import get_ohlcv
+                    df = get_ohlcv(ticker, date_str, date_str)
+                else:
+                    from data.us_fetcher import get_ohlcv_us
+                    df = get_ohlcv_us(ticker, date_str, date_str, use_cache=False)
+
+                if df is None or df.empty:
+                    continue
+
+                eod_open  = float(df["Open"].iloc[0])
+                eod_close = float(df["Close"].iloc[0])
+                pct = (eod_close - eod_open) / eod_open * 100 if eod_open != 0 else 0.0
+
+                item["eod_open"]       = round(eod_open, 2)
+                item["eod_close"]      = round(eod_close, 2)
+                item["eod_pct_change"] = round(pct, 2)
+                updated = True
+            except Exception as e:
+                print(f"[성과] {ticker} 업데이트 실패: {e}")
+
+    if updated:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(records, f, ensure_ascii=False, indent=2)
+
+    return updated
 
 
 def list_report_files(market: str = None) -> list[Path]:

@@ -317,6 +317,13 @@ def send_report(bot: KakaoBot, df: pd.DataFrame, days: int, top_n: int):
     else:
         bot.send_text("매도 추천 종목이 없습니다.")
 
+    # BUY 종목을 워치리스트에 자동 등록 (매도 모니터가 5분마다 감시)
+    try:
+        from notifications.watchlist import add_from_df
+        add_from_df(df)
+    except Exception as e:
+        print(f"[워치리스트] 등록 오류: {e}")
+
     print(f"[완료] 카카오톡 전송 완료 ({datetime.now().strftime('%H:%M:%S')})")
 
 

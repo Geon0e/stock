@@ -34,16 +34,25 @@ TOP_BT        = 3        # 백테스팅 실행 종목 수
 
 # ── 스캔 ─────────────────────────────────────────────────────────────────
 
+def _liquidity_ok(df, min_krw=1_000_000_000, min_price=2000):
+    if len(df) < 20 or df["Close"].iloc[-1] < min_price:
+        return df["Close"].iloc[-1] >= min_price if not df.empty else False
+    return (df["Close"].tail(20) * df["Volume"].tail(20)).mean() >= min_krw
+
+
 def _fetch_kr(args):
-    ticker, name, start, end, crawler = args
+    ticker, name, start, end, crawler, macro = args
     try:
         df = crawler.get_ohlcv(ticker, start, end, use_cache=False)
         if df is None or df.empty or len(df) < 10:
             return None
-        r = evaluate(df)
+        if not _liquidity_ok(df):
+            return None
+        r = evaluate(df, macro)
         return {
             "ticker": ticker, "name": name,
             "signal": r["signal"], "score": r["score"], "details": r["details"],
+            "open":  df["Open"].iloc[-1],
             "close": df["Close"].iloc[-1],
             "ret5":  (df["Close"].iloc[-1] / df["Close"].iloc[-5]  - 1) * 100 if len(df) >= 5  else 0,
             "ret20": (df["Close"].iloc[-1] / df["Close"].iloc[-20] - 1) * 100 if len(df) >= 20 else 0,
@@ -53,16 +62,19 @@ def _fetch_kr(args):
 
 
 def _fetch_us(args):
-    ticker, name, start, end = args
+    ticker, name, start, end, macro = args
     try:
         from data.us_fetcher import get_ohlcv_us
         df = get_ohlcv_us(ticker, start, end, use_cache=False)
         if df is None or df.empty or len(df) < 10:
             return None
-        r = evaluate(df)
+        if not _liquidity_ok(df, min_krw=5_000_000, min_price=1):
+            return None
+        r = evaluate(df, macro)
         return {
             "ticker": ticker, "name": name,
             "signal": r["signal"], "score": r["score"], "details": r["details"],
+            "open":  df["Open"].iloc[-1],
             "close": df["Close"].iloc[-1],
             "ret5":  (df["Close"].iloc[-1] / df["Close"].iloc[-5]  - 1) * 100 if len(df) >= 5  else 0,
             "ret20": (df["Close"].iloc[-1] / df["Close"].iloc[-20] - 1) * 100 if len(df) >= 20 else 0,
@@ -72,20 +84,23 @@ def _fetch_us(args):
 
 
 def run_scan(market: str):
+    from data.macro_fetcher import fetch_all as _fetch_macro
     end   = datetime.today().strftime("%Y-%m-%d")
     start = (datetime.today() - timedelta(days=90)).strftime("%Y-%m-%d")
+    macro = _fetch_macro(days=30)
+    print(f"[매크로] VIX={macro.get('vix', {}).get('value', 'N/A'):.1f}" if macro.get("vix", {}).get("value") else "[매크로] 수집 완료")
 
     if market == "kospi200":
         from data.fetcher import get_kospi200_tickers
         from data.crawler import NaverFinanceCrawler
         stocks  = get_kospi200_tickers(use_cache=True)
         crawler = NaverFinanceCrawler(request_delay=REQUEST_DELAY, verify_ssl=False)
-        args    = [(r["Code"], r["Name"], start, end, crawler) for _, r in stocks.iterrows()]
+        args    = [(r["Code"], r["Name"], start, end, crawler, macro) for _, r in stocks.iterrows()]
         worker  = _fetch_kr
     else:
         from data.us_fetcher import get_nasdaq100_tickers
         stocks = get_nasdaq100_tickers(use_cache=True)
-        args   = [(r["Code"], r["Name"], start, end) for _, r in stocks.iterrows()]
+        args   = [(r["Code"], r["Name"], start, end, macro) for _, r in stocks.iterrows()]
         worker = _fetch_us
 
     results = []
@@ -110,9 +125,9 @@ def run_scan(market: str):
 # ── 백테스팅 ─────────────────────────────────────────────────────────────
 
 def run_backtest_for_ticker(ticker: str, market: str):
-    """단일 종목 MA5/20 전략 1년 백테스팅"""
+    """단일 종목 MA5/20/60+RSI 전략 1년 백테스팅"""
     from backtest.engine import BacktestEngine
-    from backtest.strategies import MovingAverageCrossStrategy
+    from backtest.strategies import MovingAverageCrossV2Strategy
 
     end_dt   = datetime.today()
     start_dt = end_dt - timedelta(days=BT_DAYS)
@@ -130,7 +145,7 @@ def run_backtest_for_ticker(ticker: str, market: str):
         if df is None or df.empty or len(df) < 60:
             return None
 
-        strategy = MovingAverageCrossStrategy(ticker, short_window=5, long_window=20)
+        strategy = MovingAverageCrossV2Strategy(ticker, short_window=5, long_window=20, trend_window=60)
         buf = _io.StringIO()
         with contextlib.redirect_stdout(buf):
             engine = BacktestEngine(data={ticker: df}, initial_capital=CAPITAL)
@@ -225,7 +240,7 @@ def send_daily_report(bot: KakaoBot, df, market: str):
     # ── 메시지 4: 백테스팅 결과 (TOP 3 매수 종목) ────────────────────────
     bt_tickers = list(buy_df.head(TOP_BT)[["ticker", "name"]].itertuples(index=False, name=None))
     if bt_tickers:
-        bt_lines = [f"[백테스팅] MA5/20 전략 최근 {BT_DAYS//365}년\n{'─'*22}"]
+        bt_lines = [f"[백테스팅] MA5/20/60+RSI 전략 최근 {BT_DAYS//365}년\n{'─'*22}"]
         for ticker, name in bt_tickers:
             m = run_backtest_for_ticker(ticker, market)
             if m:
@@ -303,6 +318,15 @@ def job(market: str):
     print(f"\n{'='*50}")
     print(f"[리포트] {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} 시작")
     print(f"{'='*50}")
+
+    # 전날 추천 종목 EOD 성과 업데이트
+    try:
+        yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        from reports.history import update_eod_performance
+        if update_eod_performance(market, yesterday):
+            print(f"[성과] {yesterday} EOD 성과 업데이트 완료")
+    except Exception as e:
+        print(f"[성과] EOD 업데이트 실패 (무시): {e}")
 
     if not REST_API_KEY or not ACCESS_TOKEN:
         print("[오류] 카카오 설정이 없습니다. kakao_setup.py를 먼저 실행하세요.")

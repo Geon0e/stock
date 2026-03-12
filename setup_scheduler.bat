@@ -5,12 +5,20 @@ echo  카카오톡 리포트 자동 스케줄 등록
 echo ========================================
 echo.
 
-:: Python 경로 확인
-for /f "delims=" %%i in ('where python') do set PYTHON_PATH=%%i
+:: Python 경로 확인 (실제 실행 파일 경로, WindowsApps 스텁 제외)
+for /f "delims=" %%i in ('python -c "import sys; print(sys.executable)"') do set PYTHON_PATH=%%i
 if "%PYTHON_PATH%"=="" (
     echo [오류] Python을 찾을 수 없습니다.
     pause
     exit /b 1
+)
+
+:: WindowsApps 스텁 경고
+echo %PYTHON_PATH% | findstr /i "WindowsApps" > nul
+if %errorlevel% equ 0 (
+    echo [경고] WindowsApps 스텁이 감지되었습니다. Task Scheduler에서 동작하지 않을 수 있습니다.
+    echo        Microsoft Store Python 앱을 비활성화하거나 정식 Python을 설치해 주세요.
+    pause
 )
 
 echo [확인] Python: %PYTHON_PATH%

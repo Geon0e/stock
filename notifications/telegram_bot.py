@@ -280,6 +280,13 @@ def send_report(days: int = DEFAULT_DAYS, top_n: int = TOP_N,
     bot.send(format_sell_list(df, top_n))
     print("[전송] 매도 추천 완료")
 
+    # BUY 종목을 워치리스트에 자동 등록 (매도 모니터가 5분마다 감시)
+    try:
+        from notifications.watchlist import add_from_df
+        add_from_df(df)
+    except Exception as e:
+        print(f"[워치리스트] 등록 오류: {e}")
+
     print(f"[완료] 텔레그램 전송 완료 ({datetime.now().strftime('%H:%M:%S')})")
 
 

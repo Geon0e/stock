@@ -1,0 +1,105 @@
+[
+  {
+    "sent_at": "2026-03-12 10:01:19",
+    "channel": "kakao",
+    "market": "kospi200",
+    "total": 200,
+    "buy_count": 10,
+    "sell_count": 69,
+    "avg_score": 45.4,
+    "top_buy": [
+      {
+        "ticker": "079550",
+        "name": "LIG넥스원",
+        "score": 66,
+        "signal": "BUY",
+        "close": 749000,
+        "ret5": -10.19,
+        "ret20": 67.19
+      },
+      {
+        "ticker": "272210",
+        "name": "한화시스템",
+        "score": 65,
+        "signal": "BUY",
+        "close": 149000,
+        "ret5": -6.23,
+        "ret20": 42.72
+      },
+      {
+        "ticker": "012450",
+        "name": "한화에어로스페이스",
+        "score": 65,
+        "signal": "BUY",
+        "close": 1443000,
+        "ret5": -2.57,
+        "ret20": 20.96
+      },
+      {
+        "ticker": "112610",
+        "name": "씨에스윈드",
+        "score": 64,
+        "signal": "BUY",
+        "close": 52600,
+        "ret5": 1.15,
+        "ret20": 22.04
+      },
+      {
+        "ticker": "042700",
+        "name": "한미반도체",
+        "score": 63,
+        "signal": "BUY",
+        "close": 308500,
+        "ret5": -7.5,
+        "ret20": 55.97
+      }
+    ],
+    "top_sell": [
+      {
+        "ticker": "090430",
+        "name": "아모레퍼시픽",
+        "score": 33,
+        "signal": "SELL",
+        "close": 130900,
+        "ret5": -0.53,
+        "ret20": -20.71
+      },
+      {
+        "ticker": "008770",
+        "name": "호텔신라",
+        "score": 34,
+        "signal": "SELL",
+        "close": 42650,
+        "ret5": 1.43,
+        "ret20": -14.19
+      },
+      {
+        "ticker": "017800",
+        "name": "현대엘리베이터",
+        "score": 34,
+        "signal": "SELL",
+        "close": 88800,
+        "ret5": 2.07,
+        "ret20": -14.12
+      },
+      {
+        "ticker": "192820",
+        "name": "코스맥스",
+        "score": 34,
+        "signal": "SELL",
+        "close": 171500,
+        "ret5": 1.54,
+        "ret20": -17.35
+      },
+      {
+        "ticker": "002790",
+        "name": "아모레퍼시픽홀딩스",
+        "score": 35,
+        "signal": "SELL",
+        "close": 27150,
+        "ret5": -0.18,
+        "ret20": -22.32
+      }
+    ]
+  }
+]

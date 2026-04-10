@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "ticker": "005930",
+  "cycle": 1,
+  "optimized_at": "2026-04-10 13:42:43",
+  "backtest_period": {
+    "start": "2018-01-01",
+    "end": "2024-12-31"
+  },
+  "strategy": {
+    "type": "Breakout",
+    "params": {
+      "entry_window": 15,
+      "exit_window": 5,
+      "trail_mult": 1.5,
+      "profit_target_mult": 0.8,
+      "volume_ratio": 1.0,
+      "invest_pct": 0.4,
+      "rsi_filter": 65,
+      "adx_filter": 20,
+      "trend_filter": 100
+    }
+  },
+  "entry_conditions": [],
+  "exit_conditions": [],
+  "performance": {
+    "win_rate": 85.71,
+    "profit_factor": 3.59,
+    "cagr": 0.46,
+    "mdd": -1.75,
+    "sharpe": 0,
+    "sortino": 0,
+    "expectancy": 1.39,
+    "total_trades": 14,
+    "avg_hold_days": 5.7
+  }
+}

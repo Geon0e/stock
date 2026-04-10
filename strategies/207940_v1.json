@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "ticker": "207940",
+  "cycle": 1,
+  "optimized_at": "2026-04-10 14:08:07",
+  "backtest_period": {
+    "start": "2018-01-01",
+    "end": "2024-12-31"
+  },
+  "strategy": {
+    "type": "Breakout",
+    "params": {
+      "entry_window": 40,
+      "exit_window": 15,
+      "trail_mult": 3.0,
+      "profit_target_mult": 0.8,
+      "volume_ratio": 1.5,
+      "invest_pct": 0.5,
+      "rsi_filter": 70,
+      "adx_filter": 20,
+      "trend_filter": 0
+    }
+  },
+  "entry_conditions": [],
+  "exit_conditions": [],
+  "performance": {
+    "win_rate": 88.89,
+    "profit_factor": 3.96,
+    "cagr": 1.7,
+    "mdd": -4.13,
+    "sharpe": 0,
+    "sortino": 0,
+    "expectancy": 3.11,
+    "total_trades": 18,
+    "avg_hold_days": 8.1
+  }
+}

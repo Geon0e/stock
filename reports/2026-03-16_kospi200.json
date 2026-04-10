@@ -1,0 +1,91 @@
+[
+  {
+    "sent_at": "2026-03-16 08:31:41",
+    "channel": "kakao",
+    "market": "kospi200",
+    "total": 197,
+    "buy_count": 2,
+    "sell_count": 37,
+    "avg_score": 45.4,
+    "top_buy": [
+      {
+        "ticker": "000720",
+        "name": "현대건설",
+        "score": 61,
+        "signal": "BUY",
+        "close": 164400,
+        "ret5": 8.16,
+        "ret20": 43.46,
+        "open_price": 164400,
+        "eod_open": 166400.0,
+        "eod_close": 159600.0,
+        "eod_pct_change": -4.09
+      },
+      {
+        "ticker": "012450",
+        "name": "한화에어로스페이스",
+        "score": 61,
+        "signal": "BUY",
+        "close": 1488000,
+        "ret5": 2.27,
+        "ret20": 31.68,
+        "open_price": 1488000,
+        "eod_open": 1478000.0,
+        "eod_close": 1476000.0,
+        "eod_pct_change": -0.14
+      }
+    ],
+    "top_sell": [
+      {
+        "ticker": "282330",
+        "name": "BGF리테일",
+        "score": 37,
+        "signal": "SELL",
+        "close": 117600,
+        "ret5": -2.41,
+        "ret20": -16.42,
+        "open_price": 117600
+      },
+      {
+        "ticker": "323410",
+        "name": "카카오뱅크",
+        "score": 38,
+        "signal": "SELL",
+        "close": 23850,
+        "ret5": -1.45,
+        "ret20": -14.97,
+        "open_price": 23850
+      },
+      {
+        "ticker": "022100",
+        "name": "포스코DX",
+        "score": 38,
+        "signal": "SELL",
+        "close": 30800,
+        "ret5": -6.38,
+        "ret20": -18.09,
+        "open_price": 30800
+      },
+      {
+        "ticker": "090430",
+        "name": "아모레퍼시픽",
+        "score": 38,
+        "signal": "SELL",
+        "close": 131000,
+        "ret5": 1.39,
+        "ret20": -19.63,
+        "open_price": 131000
+      },
+      {
+        "ticker": "015760",
+        "name": "한국전력",
+        "score": 38,
+        "signal": "SELL",
+        "close": 48300,
+        "ret5": 1.47,
+        "ret20": -20.82,
+        "open_price": 48300
+      }
+    ]
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "sent_at": "2026-04-02 08:31:46",
+    "channel": "kakao",
+    "market": "kospi200",
+    "total": 197,
+    "buy_count": 1,
+    "sell_count": 1,
+    "avg_score": 49.6,
+    "top_buy": [
+      {
+        "ticker": "120110",
+        "name": "코오롱인더",
+        "score": 61,
+        "signal": "BUY",
+        "close": 83000,
+        "ret5": 3.75,
+        "ret20": 31.96,
+        "open_price": 83000,
+        "eod_open": 83100.0,
+        "eod_close": 79300.0,
+        "eod_pct_change": -4.57
+      }
+    ],
+    "top_sell": [
+      {
+        "ticker": "042700",
+        "name": "한미반도체",
+        "score": 37,
+        "signal": "SELL",
+        "close": 273500,
+        "ret5": -0.73,
+        "ret20": -17.99,
+        "open_price": 273500
+      }
+    ]
+  }
+]

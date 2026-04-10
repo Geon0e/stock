@@ -1,0 +1,34 @@
+[
+  {
+    "sent_at": "2026-03-30 08:31:42",
+    "channel": "kakao",
+    "market": "kospi200",
+    "total": 197,
+    "buy_count": 0,
+    "sell_count": 2,
+    "avg_score": 47.1,
+    "top_buy": [],
+    "top_sell": [
+      {
+        "ticker": "352820",
+        "name": "하이브",
+        "score": 38,
+        "signal": "SELL",
+        "close": 307000,
+        "ret5": 4.78,
+        "ret20": -14.6,
+        "open_price": 307000
+      },
+      {
+        "ticker": "005380",
+        "name": "현대차",
+        "score": 40,
+        "signal": "SELL",
+        "close": 495000,
+        "ret5": 0.61,
+        "ret20": -16.81,
+        "open_price": 495000
+      }
+    ]
+  }
+]

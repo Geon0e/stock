@@ -177,7 +177,8 @@ def get_kospi200_tickers(use_cache: bool = True) -> pd.DataFrame:
             break
 
     df = pd.DataFrame(tickers, columns=["Code", "Name"])
-    df.to_csv(cache_path, index=False)
+    if len(df) >= 50:  # 정상 수집 시에만 캐시 저장 (비어있으면 저장 안함)
+        df.to_csv(cache_path, index=False)
     print(f"[완료] KOSPI 200 종목 {len(df)}개 수집")
     return df
 

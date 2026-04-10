@@ -1,0 +1,34 @@
+[
+  {
+    "sent_at": "2026-03-24 22:30:39",
+    "channel": "kakao",
+    "market": "nasdaq100",
+    "total": 101,
+    "buy_count": 0,
+    "sell_count": 2,
+    "avg_score": 47.1,
+    "top_buy": [],
+    "top_sell": [
+      {
+        "ticker": "ADI",
+        "name": "Analog Devices",
+        "score": 38,
+        "signal": "SELL",
+        "close": 312.19,
+        "ret5": -0.47,
+        "ret20": -12.33,
+        "open_price": 315.48
+      },
+      {
+        "ticker": "AEP",
+        "name": "American Electric Power",
+        "score": 39,
+        "signal": "SELL",
+        "close": 127.92,
+        "ret5": -4.27,
+        "ret20": -3.38,
+        "open_price": 126.79
+      }
+    ]
+  }
+]

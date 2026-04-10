@@ -1,0 +1,27 @@
+[
+  {
+    "sent_at": "2026-03-23 22:30:42",
+    "channel": "kakao",
+    "market": "nasdaq100",
+    "total": 101,
+    "buy_count": 1,
+    "sell_count": 0,
+    "avg_score": 49.6,
+    "top_buy": [
+      {
+        "ticker": "PYPL",
+        "name": "PayPal",
+        "score": 60,
+        "signal": "BUY",
+        "close": 44.01,
+        "ret5": -3.1,
+        "ret20": -0.09,
+        "open_price": 44.33,
+        "eod_open": 44.72,
+        "eod_close": 45.49,
+        "eod_pct_change": 1.72
+      }
+    ],
+    "top_sell": []
+  }
+]

@@ -104,7 +104,7 @@ class StrategyOptimizer:
     ticker : str
     capital : float
     target_win_rate : float
-        목표 승률 (%) — 이 값 도달 시 조기 종료
+        목표 승률 (%) - 이 값 도달 시 조기 종료
     max_iter : int
         최대 반복 횟수
     min_trades : int
@@ -224,7 +224,7 @@ class StrategyOptimizer:
     def _phase2(self, n_refine: int) -> None:
         if not self.results:
             return
-        print(f"\n[Phase 2] Local Refinement ({n_refine}회) — 상위 후보 주변 집중 탐색 ...")
+        print(f"\n[Phase 2] Local Refinement ({n_refine}회) - 상위 후보 주변 집중 탐색 ...")
 
         # 상위 5개 후보 추출
         top5 = sorted(self.results, key=lambda x: x.get("승률(%)", 0), reverse=True)[:5]
@@ -312,11 +312,11 @@ class StrategyOptimizer:
 
         best_wr = self.best.get("승률(%)", 0) or 0
         if self.best:
-            achieved = "✅ 목표 달성!" if best_wr >= self.target_win_rate else "❌ 목표 미달"
+            achieved = "[달성]" if best_wr >= self.target_win_rate else "[미달]"
             print(f"  {achieved}  최고 승률: {best_wr:.1f}% (목표 {self.target_win_rate}%)")
             print(f"  최적 전략: {self.best.get('_strategy')}  파라미터: {self.best.get('_params')}")
         else:
-            print("  ⚠️  유효한 결과 없음 (데이터 부족 또는 제약 조건 과도)")
+            print("  [!] 유효한 결과 없음 (데이터 부족 또는 제약 조건 과도)")
         print("=" * 60)
 
 

@@ -1,0 +1,104 @@
+[
+  {
+    "sent_at": "2026-03-19 08:31:18",
+    "channel": "kakao",
+    "market": "kospi200",
+    "total": 197,
+    "buy_count": 3,
+    "sell_count": 22,
+    "avg_score": 46.3,
+    "top_buy": [
+      {
+        "ticker": "047040",
+        "name": "대우건설",
+        "score": 60,
+        "signal": "BUY",
+        "close": 14870,
+        "ret5": 20.7,
+        "ret20": 87.52,
+        "open_price": 14870,
+        "eod_open": 14560.0,
+        "eod_close": 16170.0,
+        "eod_pct_change": 11.06
+      },
+      {
+        "ticker": "010060",
+        "name": "OCI홀딩스",
+        "score": 60,
+        "signal": "BUY",
+        "close": 193600,
+        "ret5": 16.63,
+        "ret20": 22.22,
+        "open_price": 193600,
+        "eod_open": 196900.0,
+        "eod_close": 198200.0,
+        "eod_pct_change": 0.66
+      },
+      {
+        "ticker": "006360",
+        "name": "GS건설",
+        "score": 60,
+        "signal": "BUY",
+        "close": 25650,
+        "ret5": 11.52,
+        "ret20": 14.77,
+        "open_price": 25650,
+        "eod_open": 25600.0,
+        "eod_close": 25950.0,
+        "eod_pct_change": 1.37
+      }
+    ],
+    "top_sell": [
+      {
+        "ticker": "068270",
+        "name": "셀트리온",
+        "score": 38,
+        "signal": "SELL",
+        "close": 209500,
+        "ret5": 1.95,
+        "ret20": -14.31,
+        "open_price": 209500
+      },
+      {
+        "ticker": "316140",
+        "name": "우리금융지주",
+        "score": 38,
+        "signal": "SELL",
+        "close": 33500,
+        "ret5": 4.04,
+        "ret20": -14.97,
+        "open_price": 33500
+      },
+      {
+        "ticker": "017800",
+        "name": "현대엘리베이터",
+        "score": 38,
+        "signal": "SELL",
+        "close": 88500,
+        "ret5": 0.68,
+        "ret20": -17.98,
+        "open_price": 88500
+      },
+      {
+        "ticker": "138930",
+        "name": "BNK금융지주",
+        "score": 38,
+        "signal": "SELL",
+        "close": 18760,
+        "ret5": 2.68,
+        "ret20": -15.3,
+        "open_price": 18760
+      },
+      {
+        "ticker": "139130",
+        "name": "iM금융지주",
+        "score": 38,
+        "signal": "SELL",
+        "close": 16990,
+        "ret5": 1.98,
+        "ret20": -17.12,
+        "open_price": 16990
+      }
+    ]
+  }
+]

@@ -1,0 +1,44 @@
+[
+  {
+    "sent_at": "2026-03-13 22:30:38",
+    "channel": "kakao",
+    "market": "nasdaq100",
+    "total": 101,
+    "buy_count": 0,
+    "sell_count": 3,
+    "avg_score": 49.1,
+    "top_buy": [],
+    "top_sell": [
+      {
+        "ticker": "LRCX",
+        "name": "Lam Research",
+        "score": 38,
+        "signal": "SELL",
+        "close": 209.49,
+        "ret5": 5.09,
+        "ret20": -9.43,
+        "open_price": 213.67
+      },
+      {
+        "ticker": "MPWR",
+        "name": "Monolithic Power Systems",
+        "score": 38,
+        "signal": "SELL",
+        "close": 1033.88,
+        "ret5": 1.04,
+        "ret20": -10.56,
+        "open_price": 1045.94
+      },
+      {
+        "ticker": "TXN",
+        "name": "Texas Instruments",
+        "score": 39,
+        "signal": "SELL",
+        "close": 190.05,
+        "ret5": -1.64,
+        "ret20": -14.78,
+        "open_price": 193.65
+      }
+    ]
+  }
+]

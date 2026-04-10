@@ -1,0 +1,78 @@
+[
+  {
+    "sent_at": "2026-03-17 08:31:20",
+    "channel": "kakao",
+    "market": "kospi200",
+    "total": 197,
+    "buy_count": 1,
+    "sell_count": 13,
+    "avg_score": 46.8,
+    "top_buy": [
+      {
+        "ticker": "079550",
+        "name": "LIG넥스원",
+        "score": 60,
+        "signal": "BUY",
+        "close": 730000,
+        "ret5": -1.62,
+        "ret20": 60.26,
+        "open_price": 730000,
+        "eod_open": 725000.0,
+        "eod_close": 705000.0,
+        "eod_pct_change": -2.76
+      }
+    ],
+    "top_sell": [
+      {
+        "ticker": "028260",
+        "name": "삼성물산",
+        "score": 38,
+        "signal": "SELL",
+        "close": 278500,
+        "ret5": -1.76,
+        "ret20": -16.62,
+        "open_price": 278500
+      },
+      {
+        "ticker": "086790",
+        "name": "하나금융지주",
+        "score": 39,
+        "signal": "SELL",
+        "close": 108400,
+        "ret5": -4.41,
+        "ret20": -16.62,
+        "open_price": 108400
+      },
+      {
+        "ticker": "298020",
+        "name": "효성티앤씨",
+        "score": 39,
+        "signal": "SELL",
+        "close": 333500,
+        "ret5": -7.36,
+        "ret20": -17.14,
+        "open_price": 333500
+      },
+      {
+        "ticker": "055550",
+        "name": "신한지주",
+        "score": 39,
+        "signal": "SELL",
+        "close": 90000,
+        "ret5": -1.21,
+        "ret20": -15.09,
+        "open_price": 90000
+      },
+      {
+        "ticker": "323410",
+        "name": "카카오뱅크",
+        "score": 39,
+        "signal": "SELL",
+        "close": 23550,
+        "ret5": -3.09,
+        "ret20": -17.51,
+        "open_price": 23550
+      }
+    ]
+  }
+]

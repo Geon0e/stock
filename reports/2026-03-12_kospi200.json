@@ -15,7 +15,10 @@
         "signal": "BUY",
         "close": 749000,
         "ret5": -10.19,
-        "ret20": 67.19
+        "ret20": 67.19,
+        "eod_open": 760000.0,
+        "eod_close": 755000.0,
+        "eod_pct_change": -0.66
       },
       {
         "ticker": "272210",
@@ -24,7 +27,10 @@
         "signal": "BUY",
         "close": 149000,
         "ret5": -6.23,
-        "ret20": 42.72
+        "ret20": 42.72,
+        "eod_open": 150000.0,
+        "eod_close": 152300.0,
+        "eod_pct_change": 1.53
       },
       {
         "ticker": "012450",
@@ -33,7 +39,10 @@
         "signal": "BUY",
         "close": 1443000,
         "ret5": -2.57,
-        "ret20": 20.96
+        "ret20": 20.96,
+        "eod_open": 1430000.0,
+        "eod_close": 1465000.0,
+        "eod_pct_change": 2.45
       },
       {
         "ticker": "112610",
@@ -42,7 +51,10 @@
         "signal": "BUY",
         "close": 52600,
         "ret5": 1.15,
-        "ret20": 22.04
+        "ret20": 22.04,
+        "eod_open": 51300.0,
+        "eod_close": 56000.0,
+        "eod_pct_change": 9.16
       },
       {
         "ticker": "042700",
@@ -51,7 +63,10 @@
         "signal": "BUY",
         "close": 308500,
         "ret5": -7.5,
-        "ret20": 55.97
+        "ret20": 55.97,
+        "eod_open": 305000.0,
+        "eod_close": 317000.0,
+        "eod_pct_change": 3.93
       }
     ],
     "top_sell": [

@@ -1,0 +1,54 @@
+[
+  {
+    "sent_at": "2026-04-10 08:31:39",
+    "channel": "kakao",
+    "market": "kospi200",
+    "total": 195,
+    "buy_count": 4,
+    "sell_count": 0,
+    "avg_score": 51.6,
+    "top_buy": [
+      {
+        "ticker": "028050",
+        "name": "삼성E&A",
+        "score": 62,
+        "signal": "BUY",
+        "close": 51300,
+        "ret5": 12.38,
+        "ret20": 63.64,
+        "open_price": 51300
+      },
+      {
+        "ticker": "011170",
+        "name": "롯데케미칼",
+        "score": 61,
+        "signal": "BUY",
+        "close": 96700,
+        "ret5": 15.67,
+        "ret20": 39.94,
+        "open_price": 96700
+      },
+      {
+        "ticker": "003030",
+        "name": "세아제강지주",
+        "score": 61,
+        "signal": "BUY",
+        "close": 238500,
+        "ret5": -0.62,
+        "ret20": 49.44,
+        "open_price": 238500
+      },
+      {
+        "ticker": "093370",
+        "name": "후성",
+        "score": 61,
+        "signal": "BUY",
+        "close": 11240,
+        "ret5": 13.54,
+        "ret20": 64.57,
+        "open_price": 11240
+      }
+    ],
+    "top_sell": []
+  }
+]

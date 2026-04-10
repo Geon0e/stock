@@ -1,0 +1,24 @@
+[
+  {
+    "sent_at": "2026-04-01 08:31:47",
+    "channel": "kakao",
+    "market": "kospi200",
+    "total": 197,
+    "buy_count": 0,
+    "sell_count": 1,
+    "avg_score": 50.1,
+    "top_buy": [],
+    "top_sell": [
+      {
+        "ticker": "042700",
+        "name": "한미반도체",
+        "score": 39,
+        "signal": "SELL",
+        "close": 251000,
+        "ret5": -9.71,
+        "ret20": -20.32,
+        "open_price": 251000
+      }
+    ]
+  }
+]

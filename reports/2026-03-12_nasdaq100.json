@@ -1,0 +1,78 @@
+[
+  {
+    "sent_at": "2026-03-12 22:30:38",
+    "channel": "kakao",
+    "market": "nasdaq100",
+    "total": 100,
+    "buy_count": 1,
+    "sell_count": 6,
+    "avg_score": 47.6,
+    "top_buy": [
+      {
+        "ticker": "TRI",
+        "name": "Thomson Reuters",
+        "score": 60,
+        "signal": "BUY",
+        "close": 103.11,
+        "ret5": -5.78,
+        "ret20": 15.59,
+        "open_price": 104.59,
+        "eod_open": 103.27,
+        "eod_close": 99.28,
+        "eod_pct_change": -3.86
+      }
+    ],
+    "top_sell": [
+      {
+        "ticker": "TXN",
+        "name": "Texas Instruments",
+        "score": 38,
+        "signal": "SELL",
+        "close": 198.67,
+        "ret5": 0.33,
+        "ret20": -12.31,
+        "open_price": 198.58
+      },
+      {
+        "ticker": "MPWR",
+        "name": "Monolithic Power Systems",
+        "score": 38,
+        "signal": "SELL",
+        "close": 1071.09,
+        "ret5": -0.89,
+        "ret20": -10.5,
+        "open_price": 1059.06
+      },
+      {
+        "ticker": "LRCX",
+        "name": "Lam Research",
+        "score": 39,
+        "signal": "SELL",
+        "close": 218.87,
+        "ret5": 2.06,
+        "ret20": -6.91,
+        "open_price": 214.45
+      },
+      {
+        "ticker": "MCHP",
+        "name": "Microchip Technology",
+        "score": 39,
+        "signal": "SELL",
+        "close": 65.79,
+        "ret5": -2.98,
+        "ret20": -18.53,
+        "open_price": 65.55
+      },
+      {
+        "ticker": "MNST",
+        "name": "Monster Beverage",
+        "score": 40,
+        "signal": "SELL",
+        "close": 77.52,
+        "ret5": 1.08,
+        "ret20": -4.05,
+        "open_price": 76.31
+      }
+    ]
+  }
+]

@@ -1,0 +1,24 @@
+[
+  {
+    "sent_at": "2026-03-31 08:31:26",
+    "channel": "kakao",
+    "market": "kospi200",
+    "total": 197,
+    "buy_count": 0,
+    "sell_count": 1,
+    "avg_score": 49.5,
+    "top_buy": [],
+    "top_sell": [
+      {
+        "ticker": "352820",
+        "name": "하이브",
+        "score": 39,
+        "signal": "SELL",
+        "close": 302500,
+        "ret5": -0.66,
+        "ret20": -7.49,
+        "open_price": 302500
+      }
+    ]
+  }
+]

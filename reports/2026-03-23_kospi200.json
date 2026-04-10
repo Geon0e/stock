@@ -1,0 +1,110 @@
+[
+  {
+    "sent_at": "2026-03-23 08:31:43",
+    "channel": "kakao",
+    "market": "kospi200",
+    "total": 197,
+    "buy_count": 6,
+    "sell_count": 3,
+    "avg_score": 47.9,
+    "top_buy": [
+      {
+        "ticker": "010060",
+        "name": "OCI홀딩스",
+        "score": 62,
+        "signal": "BUY",
+        "close": 203000,
+        "ret5": 23.03,
+        "ret20": 38.66,
+        "open_price": 203000,
+        "eod_open": 206000.0,
+        "eod_close": 192200.0,
+        "eod_pct_change": -6.7
+      },
+      {
+        "ticker": "047040",
+        "name": "대우건설",
+        "score": 61,
+        "signal": "BUY",
+        "close": 19110,
+        "ret5": 57.8,
+        "ret20": 154.8,
+        "open_price": 19110,
+        "eod_open": 19730.0,
+        "eod_close": 17060.0,
+        "eod_pct_change": -13.53
+      },
+      {
+        "ticker": "112610",
+        "name": "씨에스윈드",
+        "score": 61,
+        "signal": "BUY",
+        "close": 66100,
+        "ret5": 13.77,
+        "ret20": 36.01,
+        "open_price": 66100,
+        "eod_open": 66100.0,
+        "eod_close": 63300.0,
+        "eod_pct_change": -4.24
+      },
+      {
+        "ticker": "000210",
+        "name": "DL",
+        "score": 60,
+        "signal": "BUY",
+        "close": 64900,
+        "ret5": 44.7,
+        "ret20": 29.28,
+        "open_price": 64900,
+        "eod_open": 63800.0,
+        "eod_close": 64700.0,
+        "eod_pct_change": 1.41
+      },
+      {
+        "ticker": "006360",
+        "name": "GS건설",
+        "score": 60,
+        "signal": "BUY",
+        "close": 31800,
+        "ret5": 44.55,
+        "ret20": 37.96,
+        "open_price": 31800,
+        "eod_open": 33750.0,
+        "eod_close": 31850.0,
+        "eod_pct_change": -5.63
+      }
+    ],
+    "top_sell": [
+      {
+        "ticker": "139130",
+        "name": "iM금융지주",
+        "score": 40,
+        "signal": "SELL",
+        "close": 17240,
+        "ret5": 3.98,
+        "ret20": -19.06,
+        "open_price": 17240
+      },
+      {
+        "ticker": "161390",
+        "name": "한국타이어앤테크놀로지",
+        "score": 40,
+        "signal": "SELL",
+        "close": 57400,
+        "ret5": 1.95,
+        "ret20": -22.12,
+        "open_price": 57400
+      },
+      {
+        "ticker": "068270",
+        "name": "셀트리온",
+        "score": 40,
+        "signal": "SELL",
+        "close": 202000,
+        "ret5": -1.94,
+        "ret20": -16.87,
+        "open_price": 202000
+      }
+    ]
+  }
+]

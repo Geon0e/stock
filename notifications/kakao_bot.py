@@ -186,7 +186,7 @@ def _update_env(key: str, value: str):
 # ── 스캔 (telegram_bot.py와 동일) ─────────────────────────────────────────────
 
 def _fetch_one(args):
-    from data.naver_crawler import NaverFinanceCrawler
+    from data.crawler import NaverFinanceCrawler
     from stock_signal import evaluate
     ticker, name, start, end, crawler, use_cache = args
     try:
@@ -210,7 +210,7 @@ def _fetch_one(args):
 
 def run_scan(days: int = DEFAULT_DAYS, use_cache: bool = True) -> pd.DataFrame:
     from data.fetcher import get_kospi200_tickers
-    from data.naver_crawler import NaverFinanceCrawler
+    from data.crawler import NaverFinanceCrawler
 
     end   = datetime.today().strftime("%Y-%m-%d")
     start = (datetime.today() - timedelta(days=days + 30)).strftime("%Y-%m-%d")

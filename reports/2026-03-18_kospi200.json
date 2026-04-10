@@ -1,0 +1,64 @@
+[
+  {
+    "sent_at": "2026-03-18 08:31:25",
+    "channel": "kakao",
+    "market": "kospi200",
+    "total": 197,
+    "buy_count": 0,
+    "sell_count": 16,
+    "avg_score": 46.6,
+    "top_buy": [],
+    "top_sell": [
+      {
+        "ticker": "316140",
+        "name": "우리금융지주",
+        "score": 38,
+        "signal": "SELL",
+        "close": 32600,
+        "ret5": 0.31,
+        "ret20": -16.3,
+        "open_price": 32600
+      },
+      {
+        "ticker": "138930",
+        "name": "BNK금융지주",
+        "score": 38,
+        "signal": "SELL",
+        "close": 18480,
+        "ret5": -0.91,
+        "ret20": -16.19,
+        "open_price": 18480
+      },
+      {
+        "ticker": "000120",
+        "name": "CJ대한통운",
+        "score": 39,
+        "signal": "SELL",
+        "close": 114400,
+        "ret5": -1.04,
+        "ret20": -18.52,
+        "open_price": 114400
+      },
+      {
+        "ticker": "022100",
+        "name": "포스코DX",
+        "score": 39,
+        "signal": "SELL",
+        "close": 31300,
+        "ret5": -2.34,
+        "ret20": -18.91,
+        "open_price": 31300
+      },
+      {
+        "ticker": "017800",
+        "name": "현대엘리베이터",
+        "score": 39,
+        "signal": "SELL",
+        "close": 87100,
+        "ret5": -1.14,
+        "ret20": -15.68,
+        "open_price": 87100
+      }
+    ]
+  }
+]

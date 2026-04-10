@@ -99,7 +99,7 @@ def _split_message(text: str, limit: int) -> list[str]:
 # ── 스캔 ─────────────────────────────────────────────────────────────────────
 
 def _fetch_one(args):
-    from data.naver_crawler import NaverFinanceCrawler
+    from data.crawler import NaverFinanceCrawler
     from stock_signal import evaluate
     ticker, name, start, end, crawler, use_cache = args
     try:
@@ -123,7 +123,7 @@ def _fetch_one(args):
 
 def run_scan(days: int = DEFAULT_DAYS, use_cache: bool = True) -> pd.DataFrame:
     from data.fetcher import get_kospi200_tickers
-    from data.naver_crawler import NaverFinanceCrawler
+    from data.crawler import NaverFinanceCrawler
 
     end   = datetime.today().strftime("%Y-%m-%d")
     start = (datetime.today() - timedelta(days=days + 30)).strftime("%Y-%m-%d")

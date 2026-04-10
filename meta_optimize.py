@@ -160,7 +160,7 @@ ROUNDS = [
     # ── Round 9: 전략 재조합 ─────────────────────────────────────
     {
         "name": "전체 파라미터 재랜덤화",
-        "hypothesis": "모든 파라미터 공간 재탐색 — 이전 라운드에서 놓친 영역 탐색",
+        "hypothesis": "모든 파라미터 공간 재탐색 - 이전 라운드에서 놓친 영역 탐색",
         "breakout_space": {
             "entry_window":       [10, 15, 20, 25, 30, 40, 50, 60, 80],
             "exit_window":        [5, 7, 10, 15, 20, 25, 30],
@@ -178,19 +178,23 @@ ROUNDS = [
 
 # ── 메인 루프 ──────────────────────────────────────────────────────────────
 
-def run_meta_loop(df, ticker, target_win_rate, iter_per_round, min_trades):
+def run_meta_loop(df, ticker, target_win_rate, iter_per_round, min_trades,
+                  start_date, end_date):
     from backtest.optimizer import StrategyOptimizer, PARAM_SPACE_V2, PARAM_SPACE_BREAKOUT
+    from backtest.strategy_export import save_strategy
 
     best_wr        = 0.0
     best_params    = {}
     best_strategy  = ""
+    best_metrics   = {}
     global_round   = 0
     history        = []   # [(라운드, 전략명, 승률, 파라미터)]
+    project_root   = os.path.dirname(__file__)
 
-    print("\n" + "█" * 65)
+    print("\n" + "#" * 65)
     print("  자동 승률 개선 무한 루프 시작")
     print(f"  종목: {ticker}  |  목표: {target_win_rate}%  |  라운드당 반복: {iter_per_round}회")
-    print("█" * 65)
+    print("#" * 65)
 
     cycle = 0
     while True:
@@ -241,9 +245,10 @@ def run_meta_loop(df, ticker, target_win_rate, iter_per_round, min_trades):
                 best_wr       = round_best_wr
                 best_params   = round_best_params
                 best_strategy = round_best_strat
-                tag = f"✅ +{improvement:.1f}%p 개선!"
+                best_metrics  = opt.best
+                tag = f"[+] +{improvement:.1f}%p 개선!"
             else:
-                tag = f"❌ 개선 없음 (이 라운드 최고: {round_best_wr:.1f}%)"
+                tag = f"[-] 개선 없음 (이 라운드 최고: {round_best_wr:.1f}%)"
 
             history.append((global_round, name, round_best_wr, round_best_params, round_best_strat))
 
@@ -260,12 +265,27 @@ def run_meta_loop(df, ticker, target_win_rate, iter_per_round, min_trades):
             # 목표 달성 시 계속할지 물어보지 않고 더 높은 목표로
             if best_wr >= target_win_rate:
                 target_win_rate += 2.0   # 목표를 2%씩 높여서 계속
-                print(f"\n  🎯 목표 달성! 새 목표: {target_win_rate:.0f}%로 상향")
+                print(f"\n  [*] 목표 달성! 새 목표: {target_win_rate:.0f}%로 상향")
 
             time.sleep(0.1)  # 약간의 텀
 
+        # ── 사이클 완료: 전략 JSON 저장 + git 커밋 ──────────────────
         print(f"\n{'='*65}")
         print(f"  Cycle {cycle} 완료.  최고 승률: {best_wr:.1f}%")
+        if best_metrics:
+            try:
+                saved = save_strategy(
+                    ticker=ticker,
+                    cycle=cycle,
+                    strategy_type=best_strategy,
+                    params=best_params,
+                    metrics=best_metrics,
+                    backtest_period={"start": start_date, "end": end_date},
+                    project_root=project_root,
+                )
+                print(f"  전략 저장: {os.path.basename(saved)}")
+            except Exception as e:
+                print(f"  전략 저장 실패: {e}")
         print(f"  계속 반복 중... (Ctrl+C 로 종료)")
         print(f"{'='*65}")
 
@@ -301,7 +321,8 @@ def main():
     print(f"수집 완료: {len(df)}봉\n")
 
     try:
-        run_meta_loop(df, args.ticker, args.target, args.iter, args.trades)
+        run_meta_loop(df, args.ticker, args.target, args.iter, args.trades,
+                      args.start, args.end)
     except KeyboardInterrupt:
         print("\n\n사용자가 종료했습니다.")
 

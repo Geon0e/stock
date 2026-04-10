@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "ticker": "005380",
+  "cycle": 1,
+  "optimized_at": "2026-04-10 13:49:11",
+  "backtest_period": {
+    "start": "2018-01-01",
+    "end": "2024-12-31"
+  },
+  "strategy": {
+    "type": "Breakout",
+    "params": {
+      "entry_window": 25,
+      "exit_window": 15,
+      "trail_mult": 4.0,
+      "profit_target_mult": 2.0,
+      "volume_ratio": 2.0,
+      "invest_pct": 0.3
+    }
+  },
+  "entry_conditions": [],
+  "exit_conditions": [],
+  "performance": {
+    "win_rate": 90.0,
+    "profit_factor": 6.83,
+    "cagr": 1.59,
+    "mdd": -4.92,
+    "sharpe": 0,
+    "sortino": 0,
+    "expectancy": 4.13,
+    "total_trades": 20,
+    "avg_hold_days": 18.9
+  }
+}

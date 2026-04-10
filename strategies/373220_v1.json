@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "ticker": "373220",
+  "cycle": 1,
+  "optimized_at": "2026-04-10 13:59:19",
+  "backtest_period": {
+    "start": "2018-01-01",
+    "end": "2024-12-31"
+  },
+  "strategy": {
+    "type": "Breakout",
+    "params": {
+      "entry_window": 40,
+      "exit_window": 15,
+      "trail_mult": 3.5,
+      "profit_target_mult": 2.0,
+      "volume_ratio": 1.5,
+      "invest_pct": 0.5,
+      "rsi_filter": 0,
+      "adx_filter": 0,
+      "trend_filter": 0
+    }
+  },
+  "entry_conditions": [],
+  "exit_conditions": [],
+  "performance": {
+    "win_rate": 80.0,
+    "profit_factor": 3.62,
+    "cagr": 4.01,
+    "mdd": -4.85,
+    "sharpe": 0,
+    "sortino": 0,
+    "expectancy": 5.24,
+    "total_trades": 10,
+    "avg_hold_days": 14.4
+  }
+}

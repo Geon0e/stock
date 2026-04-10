@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "ticker": "000660",
+  "cycle": 1,
+  "optimized_at": "2026-04-10 13:45:46",
+  "backtest_period": {
+    "start": "2018-01-01",
+    "end": "2024-12-31"
+  },
+  "strategy": {
+    "type": "Breakout",
+    "params": {
+      "entry_window": 20,
+      "exit_window": 15,
+      "trail_mult": 4.0,
+      "profit_target_mult": 1.0,
+      "volume_ratio": 1.2,
+      "invest_pct": 0.4,
+      "rsi_filter": 65,
+      "adx_filter": 0,
+      "trend_filter": 0
+    }
+  },
+  "entry_conditions": [],
+  "exit_conditions": [],
+  "performance": {
+    "win_rate": 73.33,
+    "profit_factor": 1.5,
+    "cagr": 0.69,
+    "mdd": -8.84,
+    "sharpe": 0,
+    "sortino": 0,
+    "expectancy": 1.11,
+    "total_trades": 30,
+    "avg_hold_days": 10.3
+  }
+}

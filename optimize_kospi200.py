@@ -211,16 +211,40 @@ def run_optimization(all_data, capital, target_wr, max_iter,
 
 # ── 메인 루프 ────────────────────────────────────────────────────────────────
 
+def _save_round_log(project_root: str, cycle: int, round_num: int,
+                    round_name: str, best_round: dict, all_results: list):
+    """라운드 결과를 JSON으로 저장 (Claude 추론용)"""
+    import json
+    log_dir  = os.path.join(project_root, "strategies", "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, f"cycle{cycle}_round{round_num:02d}.json")
+
+    # per_stock 제외하고 상위 10개 결과만 저장 (용량 절약)
+    top10 = sorted(all_results, key=lambda x: x.get("win_rate", 0), reverse=True)[:10]
+    slim  = [{k: v for k, v in r.items() if k != "per_stock"} for r in top10]
+
+    log = {
+        "cycle":       cycle,
+        "round":       round_num,
+        "round_name":  round_name,
+        "best": {k: v for k, v in best_round.items() if k != "per_stock"} if best_round else {},
+        "top10":       slim,
+    }
+    with open(log_path, "w", encoding="utf-8") as f:
+        json.dump(log, f, ensure_ascii=False, indent=2)
+    return log_path
+
+
 def run_meta_loop(all_data, all_ticker_names, capital,
                   target_wr, iter_per_round, num_cycles,
                   start_date, end_date, project_root):
-    from backtest.reasoner import reason
 
     best_global   = {}
     best_wr       = 0.0
     all_results   = []
     extra_rounds  = []
     cycle_target  = target_wr
+    round_num     = 0
 
     for cycle in range(1, num_cycles + 1):
         print(f"\n{'='*65}")
@@ -230,12 +254,13 @@ def run_meta_loop(all_data, all_ticker_names, capital,
         rounds_this_cycle = list(ROUNDS) + extra_rounds
 
         for rnd_cfg in rounds_this_cycle:
+            round_num += 1
             name       = rnd_cfg["name"]
             hypothesis = rnd_cfg.get("hypothesis", "")
             b_space    = rnd_cfg.get("breakout_space", PARAM_SPACE_BREAKOUT)
             v2_space   = rnd_cfg.get("v2_space",       PARAM_SPACE_V2)
 
-            print(f"\n[Round] {name}")
+            print(f"\n[R{round_num:02d}] {name}")
             print(f"  가설: {hypothesis}")
 
             best_round, round_results = run_optimization(
@@ -244,9 +269,15 @@ def run_meta_loop(all_data, all_ticker_names, capital,
             )
             all_results.extend(round_results)
 
+            # 라운드 결과 로그 저장
+            log_path = _save_round_log(
+                project_root, cycle, round_num, name, best_round, round_results
+            )
+            print(f"  [log] {os.path.relpath(log_path, project_root)}")
+
             round_wr = best_round.get("win_rate", 0)
             if round_wr > best_wr:
-                best_wr    = round_wr
+                best_wr     = round_wr
                 best_global = best_round
                 print(f"  [+] 신기록 합산승률 {best_wr:.1f}%")
             else:
@@ -261,32 +292,42 @@ def run_meta_loop(all_data, all_ticker_names, capital,
         print(f"  Cycle {cycle} 완료  합산승률: {best_wr:.1f}%")
 
         if best_global:
-            # reasoner로 다음 사이클 파라미터 좁히기
-            if cycle < num_cycles and all_results:
-                # all_results를 reasoner 형식으로 변환 (승률(%) 키 맞추기)
-                reasoner_results = [
-                    {**r, "승률(%)": r.get("win_rate", 0), "_params": r.get("_params", {})}
-                    for r in all_results if r
-                ]
-                analysis = reason(
-                    all_results=reasoner_results,
-                    best_strategy=best_global.get("_strategy", ""),
-                    best_params=best_global.get("_params", {}),
-                    best_wr=best_wr,
-                    round_history=[],
-                )
-                print(f"\n  [추론] {analysis['hypothesis']}")
-                for ins in analysis["insights"]:
-                    print(f"         - {ins}")
+            # 사이클 전체 요약 저장 (Claude 추론용)
+            import json
+            summary_path = os.path.join(
+                project_root, "strategies", "logs", f"cycle{cycle}_summary.json"
+            )
+            os.makedirs(os.path.dirname(summary_path), exist_ok=True)
 
-                extra_rounds = []
-                if analysis.get("breakout_space") or analysis.get("v2_space"):
-                    extra_rounds.append({
-                        "name":        f"추론 기반 집중 탐색 (Cycle {cycle})",
-                        "hypothesis":  analysis["hypothesis"],
-                        "breakout_space": analysis.get("breakout_space"),
-                        "v2_space":    analysis.get("v2_space"),
-                    })
+            # 라운드별 최고 승률 집계
+            round_logs = []
+            logs_dir = os.path.join(project_root, "strategies", "logs")
+            for f in sorted(os.listdir(logs_dir)):
+                if f.startswith(f"cycle{cycle}_round") and f.endswith(".json"):
+                    with open(os.path.join(logs_dir, f), encoding="utf-8") as fp:
+                        round_logs.append(json.load(fp))
+
+            summary = {
+                "cycle":      cycle,
+                "best_wr":    best_wr,
+                "best_strategy": best_global.get("_strategy"),
+                "best_params":   best_global.get("_params"),
+                "best_covered":  best_global.get("covered_stocks"),
+                "best_trades":   best_global.get("total_trades"),
+                "rounds": [
+                    {
+                        "round":      r["round"],
+                        "name":       r["round_name"],
+                        "best_wr":    r["best"].get("win_rate", 0) if r.get("best") else 0,
+                        "strategy":   r["best"].get("_strategy", "") if r.get("best") else "",
+                        "params":     r["best"].get("_params", {}) if r.get("best") else {},
+                    }
+                    for r in round_logs
+                ],
+            }
+            with open(summary_path, "w", encoding="utf-8") as f:
+                json.dump(summary, f, ensure_ascii=False, indent=2)
+            print(f"\n  [분석용] {os.path.relpath(summary_path, project_root)}")
 
             # MD 저장 + git 커밋
             try:

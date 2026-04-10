@@ -22,7 +22,7 @@ from config import COMMISSION_RATE, TAX_RATE, SLIPPAGE_BASE
 # ── 공통 성과 지표 계산 ───────────────────────────────────────────────────
 
 def _calc_metrics(equity: pd.Series, orders_df: pd.DataFrame, capital: float) -> dict:
-    """퀀트 표준 성과 지표 (Sharpe / Sortino / Calmar / Profit Factor / Expectancy)"""
+    """퀀트 표준 성과 지표 (Sharpe / Sortino / Calmar / Profit Factor / Expectancy / 회복계수 등)"""
     if equity.empty or len(equity) < 2:
         return {}
 
@@ -37,6 +37,9 @@ def _calc_metrics(equity: pd.Series, orders_df: pd.DataFrame, capital: float) ->
     drawdown = (equity - roll_max) / roll_max * 100
     mdd      = drawdown.min()
 
+    # 회복계수 = 총수익률 / |MDD| (손실 1에 대한 수익 배율)
+    recovery_factor = abs(total_return / mdd) if mdd != 0 else 0.0
+
     rf     = 0.035 / 252
     excess = returns - rf
     sharpe = (excess.mean() / excess.std() * np.sqrt(252)
@@ -48,19 +51,38 @@ def _calc_metrics(equity: pd.Series, orders_df: pd.DataFrame, capital: float) ->
 
     calmar = abs(cagr / mdd) if mdd != 0 else 0.0
 
+    # Omega Ratio: 임계값(rf) 초과 수익 합 / 임계값 미만 손실 합
+    gains_omega = returns[returns > rf] - rf
+    loss_omega  = rf - returns[returns <= rf]
+    omega = (gains_omega.sum() / loss_omega.sum()
+             if loss_omega.sum() > 0 else (10.0 if gains_omega.sum() > 0 else 0.0))
+
     # 거래 통계
-    wins, losses = [], []
-    n_trades     = 0
+    trade_results: list = []   # (pnl%, holding_days) 순서 있는 리스트
+    n_trades = 0
     if not orders_df.empty and "action" in orders_df.columns:
-        buys  = orders_df[orders_df["action"] == "BUY"]
-        sells = orders_df[orders_df["action"] == "SELL"]
         n_trades = len(orders_df)
+        buys  = orders_df[orders_df["action"] == "BUY"].copy()
+        sells = orders_df[orders_df["action"] == "SELL"].copy()
         for ticker in orders_df["ticker"].unique():
-            tb = buys[buys["ticker"]   == ticker]["price"].tolist()
-            ts = sells[sells["ticker"] == ticker]["price"].tolist()
-            for b, s in zip(tb, ts):
-                pnl = (s - b) / b * 100
-                (wins if pnl > 0 else losses).append(pnl)
+            t_buys  = buys[buys["ticker"]   == ticker].reset_index(drop=True)
+            t_sells = sells[sells["ticker"] == ticker].reset_index(drop=True)
+            for i in range(min(len(t_buys), len(t_sells))):
+                buy_row  = t_buys.iloc[i]
+                sell_row = t_sells.iloc[i]
+                pnl = (sell_row["price"] - buy_row["price"]) / buy_row["price"] * 100
+                hd  = 0
+                if "date" in buy_row.index and "date" in sell_row.index:
+                    try:
+                        hd = (pd.Timestamp(sell_row["date"]) - pd.Timestamp(buy_row["date"])).days
+                        hd = max(hd, 0)
+                    except Exception:
+                        pass
+                trade_results.append((pnl, hd))
+
+    wins         = [r[0] for r in trade_results if r[0] > 0]
+    losses       = [r[0] for r in trade_results if r[0] <= 0]
+    holding_days = [r[1] for r in trade_results]
 
     n_closed = len(wins) + len(losses)
     win_rate = len(wins) / n_closed * 100 if n_closed > 0 else 0.0
@@ -73,6 +95,15 @@ def _calc_metrics(equity: pd.Series, orders_df: pd.DataFrame, capital: float) ->
     avg_loss  = abs(np.mean(losses))  if losses else 0.0
     expectancy = (win_rate / 100 * avg_win) - ((1 - win_rate / 100) * avg_loss)
 
+    # R배수 = 평균수익 / 평균손실
+    r_multiple = avg_win / avg_loss if avg_loss > 0 else 0.0
+
+    # 최대 연속 손실 횟수 (순서 있는 trade_results로 계산)
+    max_consec_losses = _max_consecutive_losses([r[0] for r in trade_results])
+
+    # 평균 보유 기간
+    avg_holding = round(np.mean(holding_days), 1) if holding_days else 0.0
+
     return {
         "총수익률(%)":       round(total_return, 2),
         "CAGR(%)":          round(cagr, 2),
@@ -80,13 +111,32 @@ def _calc_metrics(equity: pd.Series, orders_df: pd.DataFrame, capital: float) ->
         "샤프비율":          round(sharpe, 2),
         "소르티노비율":       round(sortino, 2),
         "칼마비율":          round(calmar, 2),
+        "오메가비율":         round(omega, 2),
+        "회복계수":           round(recovery_factor, 2),
         "Profit Factor":    round(profit_factor, 2),
         "Expectancy(%)":    round(expectancy, 2),
+        "R배수(평균승/패)":   round(r_multiple, 2),
         "거래횟수":          n_trades,
         "연간거래횟수":       round(n_trades / max(years, 0.1), 1),
         "승률(%)":           round(win_rate, 1),
+        "최대연속손실":       max_consec_losses,
+        "평균보유일":         avg_holding,
         "최종자본":          round(equity.iloc[-1]),
     }
+
+
+def _max_consecutive_losses(pnl_list: list) -> int:
+    """순서 있는 PnL 리스트에서 최대 연속 손실 횟수 계산"""
+    if not pnl_list:
+        return 0
+    max_streak = current = 0
+    for pnl in pnl_list:
+        if pnl <= 0:
+            current += 1
+            max_streak = max(max_streak, current)
+        else:
+            current = 0
+    return max_streak
 
 
 # ── Buy & Hold 벤치마크 ───────────────────────────────────────────────────
@@ -321,7 +371,7 @@ def robustness_check(v2: dict, bh: dict,
                      multi_df: pd.DataFrame,
                      slip_df: pd.DataFrame,
                      base_slippage: float) -> list[dict]:
-    """V2 전략 로버스트니스 5개 항목 평가"""
+    """전략 로버스트니스 7개 항목 평가"""
     results = []
 
     def _chk(label, criterion, ok, val=""):
@@ -340,7 +390,7 @@ def robustness_check(v2: dict, bh: dict,
 
     bh_mdd = bh.get("MDD(%)", -999) or -999
     v2_mdd = v2.get("MDD(%)", -999) or -999
-    _chk("MDD ≤ B&H MDD",
+    _chk("MDD ≤ B&H MDD × 1.1",
          f"B&H MDD = {bh_mdd:.1f}%",
          v2_mdd >= bh_mdd * 1.1,
          f"{v2_mdd:.1f}%")
@@ -363,5 +413,19 @@ def robustness_check(v2: dict, bh: dict,
          "총이익 / 총손실",
          v2_pf > 1.2,
          f"{v2_pf:.2f}")
+
+    # 회복계수 > 1.0 (손실 1에 수익 1 이상)
+    v2_rf = v2.get("회복계수", 0) or 0
+    _chk("회복계수 > 1.0",
+         "총수익률 / |MDD| (손실 복구력)",
+         v2_rf > 1.0,
+         f"{v2_rf:.2f}")
+
+    # 오메가비율 > 1.0 (기대수익이 기대손실보다 큼)
+    v2_om = v2.get("오메가비율", 0) or 0
+    _chk("오메가비율 > 1.0",
+         "가중수익 / 가중손실",
+         v2_om > 1.0,
+         f"{v2_om:.2f}")
 
     return results

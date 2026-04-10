@@ -267,16 +267,11 @@ class BacktestEngine:
                 # 갭다운 고려: 실제 체결은 Low와 stop_price 중 높은 쪽
                 fill_price = max(low, stop_price * 0.97)
                 self._execute_sell_immediate(date, ticker, fill_price)
-                print(f"  [손절] {date.date()} {ticker} @ {fill_price:,.0f}  stop={stop_price:,.0f}")
 
     # ── 메인 루프 ────────────────────────────────────────────────────────
 
     def run(self, strategy) -> "BacktestEngine":
         """백테스트 실행 (T+1 Open 체결 방식)"""
-        print(f"백테스트 시작: {self.dates[0].date()} ~ {self.dates[-1].date()}")
-        print(f"초기 자본금: {self.initial_capital:,.0f}  |  T+1 Open 체결  |  base slip={self.slippage_rate*100:.3f}%")
-        print("-" * 55)
-
         strategy.initialize(self)
 
         for date in self.dates:
@@ -311,7 +306,6 @@ class BacktestEngine:
             })
 
         self.results = pd.DataFrame(self.portfolio.equity_curve).set_index("date")
-        print("\n백테스트 완료!")
         return self
 
     # ── 조회 헬퍼 ────────────────────────────────────────────────────────
@@ -331,7 +325,6 @@ class BacktestEngine:
 
     def report(self) -> dict:
         if self.results is None:
-            print("먼저 run()을 실행하세요.")
             return {}
 
         equity  = self.results["total_value"]
@@ -363,6 +356,15 @@ class BacktestEngine:
         # Calmar
         calmar = abs(cagr / mdd) if mdd != 0 else 0.0
 
+        # 회복계수
+        recovery_factor = abs(total_return / mdd) if mdd != 0 else 0.0
+
+        # Omega Ratio
+        gains_omega = returns[returns > rf] - rf
+        loss_omega  = rf - returns[returns <= rf]
+        omega = (gains_omega.sum() / loss_omega.sum()
+                 if loss_omega.sum() > 0 else (10.0 if gains_omega.sum() > 0 else 0.0))
+
         # 거래 통계
         orders_df   = self.get_orders()
         trade_stats = self._calc_trade_stats(orders_df)
@@ -377,61 +379,85 @@ class BacktestEngine:
             "샤프비율":              round(sharpe, 2),
             "소르티노비율":           round(sortino, 2),
             "칼마비율":              round(calmar, 2),
+            "오메가비율":             round(omega, 2),
+            "회복계수":               round(recovery_factor, 2),
             "Profit Factor":        round(trade_stats["profit_factor"], 2),
             "Expectancy(%)":        round(trade_stats["expectancy"], 2),
+            "R배수(평균승/패)":       round(trade_stats["r_multiple"], 2),
             "총거래횟수":            n_trades,
             "승률(%)":              round(trade_stats["win_rate"], 2),
+            "최대연속손실":           trade_stats["max_consec_losses"],
+            "평균보유일":             round(trade_stats["avg_holding_days"], 1),
             "백테스트기간":          f"{equity.index[0].date()} ~ {equity.index[-1].date()}",
         }
-
-        print("\n" + "=" * 55)
-        print("백테스트 성과 요약 (T+1 Open 체결)")
-        print("=" * 55)
-        for k, v in metrics.items():
-            if isinstance(v, float):
-                print(f"  {k:<26} {v:>12,.2f}")
-            elif isinstance(v, int):
-                print(f"  {k:<26} {v:>12,}")
-            else:
-                print(f"  {k:<26} {v}")
-        print("=" * 55)
 
         return metrics
 
     def _calc_trade_stats(self, orders_df: pd.DataFrame) -> dict:
-        """매매 쌍 기반 거래 통계 (Profit Factor, Expectancy, 승률)"""
-        empty = {"win_rate": 0.0, "profit_factor": 0.0, "expectancy": 0.0}
+        """매매 쌍 기반 거래 통계 (Profit Factor / Expectancy / 승률 / R배수 / 연속손실 / 보유기간)"""
+        empty = {
+            "win_rate": 0.0, "profit_factor": 0.0, "expectancy": 0.0,
+            "r_multiple": 0.0, "max_consec_losses": 0, "avg_holding_days": 0.0,
+        }
         if orders_df.empty or "action" not in orders_df.columns:
             return empty
 
-        buys  = orders_df[orders_df["action"] == "BUY"]
-        sells = orders_df[orders_df["action"] == "SELL"]
-        trade_returns = []
+        buys  = orders_df[orders_df["action"] == "BUY"].copy()
+        sells = orders_df[orders_df["action"] == "SELL"].copy()
+        trade_results = []   # (pnl%, holding_days)
 
         for ticker in orders_df["ticker"].unique():
-            tb = buys[buys["ticker"]  == ticker]["price"].tolist()
-            ts = sells[sells["ticker"] == ticker]["price"].tolist()
-            for b, s in zip(tb, ts):
-                trade_returns.append((s - b) / b * 100)
+            t_buys  = buys[buys["ticker"]   == ticker].reset_index(drop=True)
+            t_sells = sells[sells["ticker"] == ticker].reset_index(drop=True)
+            for i in range(min(len(t_buys), len(t_sells))):
+                b_price = t_buys.iloc[i]["price"]
+                s_price = t_sells.iloc[i]["price"]
+                pnl = (s_price - b_price) / b_price * 100
+                hd  = 0
+                if "date" in t_buys.columns and "date" in t_sells.columns:
+                    try:
+                        hd = (pd.Timestamp(t_sells.iloc[i]["date"]) -
+                              pd.Timestamp(t_buys.iloc[i]["date"])).days
+                        hd = max(hd, 0)
+                    except Exception:
+                        pass
+                trade_results.append((pnl, hd))
 
-        if not trade_returns:
+        if not trade_results:
             return empty
 
-        wins   = [r for r in trade_returns if r > 0]
-        losses = [r for r in trade_returns if r <= 0]
-        n      = len(trade_returns)
+        pnls         = [r[0] for r in trade_results]
+        holding_days = [r[1] for r in trade_results]
+        wins         = [r for r in pnls if r > 0]
+        losses       = [r for r in pnls if r <= 0]
+        n            = len(pnls)
 
-        win_rate     = len(wins) / n * 100
-        total_gain   = sum(wins)
-        total_loss   = abs(sum(losses))
+        win_rate      = len(wins) / n * 100
+        total_gain    = sum(wins)
+        total_loss    = abs(sum(losses))
         profit_factor = (total_gain / total_loss if total_loss > 0
                          else (10.0 if total_gain > 0 else 0.0))
-        avg_win  = np.mean(wins)         if wins   else 0.0
-        avg_loss = abs(np.mean(losses))  if losses else 0.0
+        avg_win  = np.mean(wins)        if wins   else 0.0
+        avg_loss = abs(np.mean(losses)) if losses else 0.0
         expectancy = (win_rate / 100 * avg_win) - ((1 - win_rate / 100) * avg_loss)
+        r_multiple = avg_win / avg_loss if avg_loss > 0 else 0.0
+
+        # 최대 연속 손실
+        max_streak = current = 0
+        for pnl in pnls:
+            if pnl <= 0:
+                current += 1
+                max_streak = max(max_streak, current)
+            else:
+                current = 0
+
+        avg_holding = np.mean(holding_days) if holding_days else 0.0
 
         return {
-            "win_rate":      win_rate,
-            "profit_factor": profit_factor,
-            "expectancy":    expectancy,
+            "win_rate":          win_rate,
+            "profit_factor":     profit_factor,
+            "expectancy":        expectancy,
+            "r_multiple":        r_multiple,
+            "max_consec_losses": max_streak,
+            "avg_holding_days":  avg_holding,
         }

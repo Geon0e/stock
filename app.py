@@ -266,7 +266,9 @@ def run_scan_nasdaq(days, use_cache):
 # ══════════════════════════════════════════════════════════════════════════
 
 STRATEGY_CHOICES = [
-    "이동평균 크로스 (5/20/60+RSI)",
+    "이동평균 크로스 V2 (트레일링스톱)",
+    "이동평균 크로스 V2 (고정손절)",
+    "돌파전략 (Donchian 20/10)",
     "RSI (14)",
     "볼린저밴드 (20,2σ)",
     "모멘텀 (60일)",
@@ -277,12 +279,18 @@ def _make_strategy(name, ticker):
     from backtest.strategies import (
         MovingAverageCrossV2Strategy,
         RSIStrategy, MomentumStrategy, BollingerBandStrategy,
+        BreakoutStrategy,
     )
     return {
-        "이동평균 크로스 (5/20/60+RSI)": MovingAverageCrossV2Strategy(ticker, 5, 20, 60),
-        "RSI (14)":                     RSIStrategy(ticker, period=14),
-        "볼린저밴드 (20,2σ)":            BollingerBandStrategy(ticker, window=20),
-        "모멘텀 (60일)":                 MomentumStrategy(ticker, lookback=60),
+        "이동평균 크로스 V2 (트레일링스톱)": MovingAverageCrossV2Strategy(
+            ticker, 5, 20, 60, trail_mult=3.0, atr_stop_mult=2.0),
+        "이동평균 크로스 V2 (고정손절)":     MovingAverageCrossV2Strategy(
+            ticker, 5, 20, 60, trail_mult=0.0, atr_stop_mult=2.0),
+        "돌파전략 (Donchian 20/10)":       BreakoutStrategy(
+            ticker, entry_window=20, exit_window=10, trail_mult=3.0, volume_confirm=True),
+        "RSI (14)":                        RSIStrategy(ticker, period=14),
+        "볼린저밴드 (20,2σ)":               BollingerBandStrategy(ticker, window=20),
+        "모멘텀 (60일)":                    MomentumStrategy(ticker, lookback=60),
     }[name]
 
 
@@ -747,11 +755,18 @@ def _render_bt_results(bt: dict):
     row1[4].metric("소르티노",   f"{metrics.get('소르티노비율', 0):.2f}")
 
     row2 = st.columns(5)
-    row2[0].metric("칼마비율",   f"{metrics.get('칼마비율', 0):.2f}")
-    row2[1].metric("Profit Factor", f"{metrics.get('Profit Factor', 0):.2f}")
-    row2[2].metric("Expectancy", f"{metrics.get('Expectancy(%)', 0):+.2f}%")
-    row2[3].metric("승률",       f"{metrics.get('승률(%)', 0):.1f}%")
-    row2[4].metric("총거래횟수", f"{metrics.get('총거래횟수', 0)}회")
+    row2[0].metric("칼마비율",       f"{metrics.get('칼마비율', 0):.2f}")
+    row2[1].metric("Profit Factor",  f"{metrics.get('Profit Factor', 0):.2f}")
+    row2[2].metric("Expectancy",     f"{metrics.get('Expectancy(%)', 0):+.2f}%")
+    row2[3].metric("승률",           f"{metrics.get('승률(%)', 0):.1f}%")
+    row2[4].metric("총거래횟수",     f"{metrics.get('총거래횟수', 0)}회")
+
+    row3 = st.columns(5)
+    row3[0].metric("오메가비율",     f"{metrics.get('오메가비율', 0):.2f}")
+    row3[1].metric("회복계수",       f"{metrics.get('회복계수', 0):.2f}")
+    row3[2].metric("R배수",          f"{metrics.get('R배수(평균승/패)', 0):.2f}")
+    row3[3].metric("최대연속손실",   f"{metrics.get('최대연속손실', 0)}회")
+    row3[4].metric("평균보유일",     f"{metrics.get('평균보유일', 0):.0f}일")
 
     st.divider()
 

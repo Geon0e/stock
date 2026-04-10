@@ -30,7 +30,7 @@ class MovingAverageCrossStrategy(BaseStrategy):
         self.in_position = False
 
     def initialize(self, engine) -> None:
-        print(f"[{self.name()}] {self.ticker} / MA{self.short_window} x MA{self.long_window}")
+        pass
 
     def on_bar(self, engine, date: pd.Timestamp, data: dict, prices: dict) -> None:
         if self.ticker not in prices:
@@ -45,17 +45,12 @@ class MovingAverageCrossStrategy(BaseStrategy):
         long_ma = sum(self.price_history[-self.long_window:]) / self.long_window
 
         if short_ma > long_ma and not self.in_position:
-            success = engine.buy_pct(date, self.ticker, self.invest_pct)
-            if success:
-                self.in_position = True
-                pos = engine.get_position(self.ticker)
-                print(f"  [매수] {date.date()} {self.ticker} {pos.quantity}주 @ {prices[self.ticker]:,.0f}원")
+            engine.buy_pct(date, self.ticker, self.invest_pct)
+            self.in_position = True
 
         elif short_ma < long_ma and self.in_position:
-            success = engine.sell(date, self.ticker)
-            if success:
-                self.in_position = False
-                print(f"  [매도] {date.date()} {self.ticker} @ {prices[self.ticker]:,.0f}원")
+            engine.sell(date, self.ticker)
+            self.in_position = False
 
     def name(self) -> str:
         return f"MA크로스({self.short_window}/{self.long_window})"

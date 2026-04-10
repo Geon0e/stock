@@ -46,7 +46,6 @@ def plot_equity_curve(
         show: 화면 표시 여부
     """
     if engine.results is None:
-        print("먼저 engine.run()을 실행하세요.")
         return
 
     results = engine.results
@@ -95,7 +94,6 @@ def plot_equity_curve(
     if save:
         filepath = RESULTS_DIR / f"{_safe_name(strategy_name)}_equity_curve.png"
         plt.savefig(filepath, dpi=150, bbox_inches="tight")
-        print(f"차트 저장: {filepath}")
 
     if show:
         plt.show()
@@ -114,14 +112,12 @@ def plot_price_with_signals(
     주가 차트에 매수/매도 신호 표시
     """
     if ticker not in engine.data:
-        print(f"데이터에 {ticker}가 없습니다.")
         return
 
     price_data = engine.data[ticker]
     orders_df = engine.get_orders()
 
     if orders_df.empty:
-        print("거래 내역이 없습니다.")
         return
 
     ticker_orders = orders_df[orders_df["ticker"] == ticker]
@@ -160,7 +156,6 @@ def plot_price_with_signals(
     if save:
         filepath = RESULTS_DIR / f"{_safe_name(strategy_name)}_{ticker}_signals.png"
         plt.savefig(filepath, dpi=150, bbox_inches="tight")
-        print(f"차트 저장: {filepath}")
 
     if show:
         plt.show()
@@ -215,7 +210,6 @@ def plot_monthly_returns(engine, strategy_name: str = "전략", save: bool = Tru
     if save:
         filepath = RESULTS_DIR / f"{_safe_name(strategy_name)}_monthly_returns.png"
         plt.savefig(filepath, dpi=150, bbox_inches="tight")
-        print(f"차트 저장: {filepath}")
 
     if show:
         plt.show()

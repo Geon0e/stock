@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "ticker": "012450",
+  "cycle": 1,
+  "optimized_at": "2026-04-10 14:03:56",
+  "backtest_period": {
+    "start": "2018-01-01",
+    "end": "2024-12-31"
+  },
+  "strategy": {
+    "type": "Breakout",
+    "params": {
+      "entry_window": 25,
+      "exit_window": 20,
+      "trail_mult": 4.0,
+      "profit_target_mult": 0.8,
+      "volume_ratio": 1.0,
+      "invest_pct": 0.2,
+      "rsi_filter": 75,
+      "adx_filter": 25,
+      "trend_filter": 150
+    }
+  },
+  "entry_conditions": [],
+  "exit_conditions": [],
+  "performance": {
+    "win_rate": 82.35,
+    "profit_factor": 2.88,
+    "cagr": 1.24,
+    "mdd": -4.1,
+    "sharpe": 0,
+    "sortino": 0,
+    "expectancy": 2.86,
+    "total_trades": 34,
+    "avg_hold_days": 17.8
+  }
+}

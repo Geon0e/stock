@@ -83,3 +83,23 @@
 | 066570 | LG전자 | 90.0% | 20 | 2.85 | +2.0% |
 | 005850 | 에스엘 | 90.0% | 20 | 3.31 | +3.3% |
 | 007660 | 이수페타시스 | 89.5% | 38 | 8.81 | +13.3% |
+
+---
+
+## 차트
+
+### 사이클별 성과 비교
+
+![cycle_summary](charts/cycle_summary.png)
+
+### 라운드별 승률 추이
+
+![round_progress](charts/cycle1_round_progress.png)
+
+### 커버리지 vs 승률
+
+![coverage_vs_wr](charts/cycle1_coverage_vs_wr.png)
+
+### 파라미터별 평균 승률
+
+![param_importance](charts/cycle1_param_importance.png)

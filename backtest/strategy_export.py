@@ -77,6 +77,7 @@ def save_strategy_md(
     backtest_period: dict[str, str],
     project_root: str,
     cycle: int = 1,
+    generate_charts: bool = True,
 ) -> str:
     """코스피200 유니버설 전략을 MD 파일로 저장 후 git 커밋. 저장 경로 반환."""
 
@@ -168,6 +169,56 @@ def save_strategy_md(
 |------|--------|------|--------|-----|------|
 {top_rows}
 """
+
+    # ── 차트 생성 ──────────────────────────────────────────────────
+    charts_section = ""
+    if generate_charts:
+        try:
+            from backtest.visualizer import generate_all_charts
+            charts = generate_all_charts(
+                project_root=project_root,
+                cycle=cycle,
+                per_stock=per_stock,
+                version=version,
+                strategy_wr=wr,
+            )
+            # MD에서의 상대 경로 (strategies/ 기준)
+            def _rel(p):
+                return os.path.relpath(p, strategies_dir).replace("\\", "/")
+
+            parts = []
+            if "cycle_summary" in charts:
+                parts.append(
+                    f"### 사이클별 성과 비교\n\n"
+                    f"![cycle_summary]({_rel(charts['cycle_summary'])})\n"
+                )
+            if "round_progress" in charts:
+                parts.append(
+                    f"### 라운드별 승률 추이\n\n"
+                    f"![round_progress]({_rel(charts['round_progress'])})\n"
+                )
+            if "coverage_vs_wr" in charts:
+                parts.append(
+                    f"### 커버리지 vs 승률\n\n"
+                    f"![coverage_vs_wr]({_rel(charts['coverage_vs_wr'])})\n"
+                )
+            if "param_importance" in charts:
+                parts.append(
+                    f"### 파라미터별 평균 승률\n\n"
+                    f"![param_importance]({_rel(charts['param_importance'])})\n"
+                )
+            if "top_stocks" in charts:
+                parts.append(
+                    f"### 상위 종목 승률\n\n"
+                    f"![top_stocks]({_rel(charts['top_stocks'])})\n"
+                )
+            if parts:
+                charts_section = "\n---\n\n## 차트\n\n" + "\n".join(parts)
+            print(f"  [chart] {len(charts)}개 차트 생성 완료")
+        except Exception as e:
+            print(f"  [!] 차트 생성 실패: {e}")
+
+    md += charts_section
 
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(md)

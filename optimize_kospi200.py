@@ -12,7 +12,7 @@ KOSPI 200 유니버설 전략 최적화
 실행:
     python optimize_kospi200.py
     python optimize_kospi200.py --iter 200 --cycles 3
-    python optimize_kospi200.py --start 2018-01-01 --end 2024-12-31
+    python optimize_kospi200.py --start 2018-01-01 --end 2026-03-31
 """
 
 import argparse
@@ -354,7 +354,7 @@ def main():
         description="KOSPI 200 전 종목 합산 승률 최대화 전략 탐색"
     )
     parser.add_argument("--start",   default="2018-01-01")
-    parser.add_argument("--end",     default="2024-12-31")
+    parser.add_argument("--end",     default="2026-03-31")
     parser.add_argument("--capital", type=float, default=10_000_000)
     parser.add_argument("--target",  type=float, default=60.0, help="목표 합산 승률 (%)")
     parser.add_argument("--iter",    type=int,   default=100,  help="라운드당 반복 횟수")

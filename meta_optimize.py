@@ -23,160 +23,160 @@ sys.path.insert(0, os.path.dirname(__file__))
 # 각 라운드는 이전 라운드보다 더 정교한 파라미터 공간을 탐색
 
 ROUNDS = [
-    # ── Cycle17 확정 (2018-2026, 80종목+ 기준) ───────────────────
-    # best: entry=640, exit=203, trail=28.0, profit=0.38, volume=1.5, invest=0.48
-    #       rsi=0, adx=0, trend=0 -> 88.4%, 159종목, 2160거래
-    # 주의: 개선폭 둔화 (0.1%p), 커버리지 하락 (165→159)
-    # 별도 발견: entry=600, trail=24, profit=0.45, vol=1.4 → 88.4%, 165종목 (고커버리지!)
-    # C18: 88.4%@165종목 vs 88.4%@159종목 비교. entry=580~650, trail=24~30 균형 탐색
+    # ── Cycle18 확정 (2018-2026, 80종목+ 기준) ───────────────────
+    # best: entry=610, exit=207, trail=23.0, profit=0.5, volume=1.6, invest=0.45
+    #       rsi=0, adx=0, trend=0 -> 89.2%, 163종목, 2076거래
+    # 핵심: 89% 돌파! entry=640→610 (하향!), trail=28→23 (하향!), profit=0.38→0.5 (급등!)
+    # R07: entry=500, exit=260, trail=28, profit=0.4, vol=1.5 → 88.5%, 171종목 (고커버리지!)
+    # C19: entry=600~620 × trail=22~25 × profit=0.45~0.55 초정밀 탐색. 90% 달성 도전
 
-    # ── Round 1: C17 최적 초촘촘 Local Search (entry 600~660) ────
+    # ── Round 1: C18 최적 초촘촘 Local Search ───────────────────
     {
-        "name": "C17 최적 주변 초촘촘 Local Search",
-        "hypothesis": "entry=640, exit=203, trail=28. entry 610~660 × trail 26~30 × exit 195~210 초촘촘",
+        "name": "C18 최적 주변 초촘촘 Local Search",
+        "hypothesis": "entry=610, exit=207, trail=23, profit=0.5, vol=1.6, inv=0.45. 초촘촘 격자",
         "breakout_space": {
-            "entry_window":       [610, 620, 625, 630, 635, 640, 645, 650, 655, 660],
-            "exit_window":        [195, 198, 200, 203, 205, 207, 210],
-            "trail_mult":         [25.0, 26.0, 27.0, 28.0, 29.0, 30.0],
-            "profit_target_mult": [0.35, 0.37, 0.38, 0.4, 0.42, 0.45],
-            "volume_ratio":       [1.4, 1.5, 1.6],
-            "invest_pct":         [0.45, 0.48, 0.5, 0.53, 0.55],
+            "entry_window":       [595, 600, 603, 605, 607, 610, 613, 615, 618, 620, 625],
+            "exit_window":        [200, 203, 205, 207, 209, 210, 213, 215],
+            "trail_mult":         [21.0, 22.0, 22.5, 23.0, 23.5, 24.0, 25.0],
+            "profit_target_mult": [0.45, 0.47, 0.48, 0.5, 0.52, 0.53, 0.55],
+            "volume_ratio":       [1.5, 1.55, 1.6, 1.65, 1.7],
+            "invest_pct":         [0.42, 0.43, 0.45, 0.47, 0.48, 0.5],
             "rsi_filter":         [0],
             "adx_filter":         [0],
             "trend_filter":       [0],
         },
     },
 
-    # ── Round 2: 고커버리지 균형점 탐색 (entry=600, trail=24, 165종목) ─
+    # ── Round 2: profit=0.5 집중 탐색 (entry=610, trail=23) ─────
     {
-        "name": "고커버리지 균형점 (entry=600, trail=24)",
-        "hypothesis": "R06: entry=600, trail=24, profit=0.45, vol=1.4 → 88.4%, 165종목. 이 균형점 정밀 탐색",
+        "name": "profit=0.5 집중 탐색 (entry=610, trail=23)",
+        "hypothesis": "profit=0.5가 C18 핵심. profit 0.4~0.7 × entry=600~620 × trail=21~25 집중",
         "breakout_space": {
-            "entry_window":       [585, 590, 595, 600, 605, 610, 615],
-            "exit_window":        [195, 198, 200, 203, 205, 207, 210],
-            "trail_mult":         [22.0, 23.0, 24.0, 25.0, 26.0],
-            "profit_target_mult": [0.38, 0.4, 0.42, 0.43, 0.45, 0.47, 0.5],
+            "entry_window":       [600, 605, 610, 615, 620],
+            "exit_window":        [200, 205, 207, 210, 215],
+            "trail_mult":         [21.0, 22.0, 23.0, 24.0, 25.0],
+            "profit_target_mult": [0.4, 0.42, 0.45, 0.47, 0.5, 0.52, 0.55, 0.6, 0.65, 0.7],
+            "volume_ratio":       [1.5, 1.6, 1.7],
+            "invest_pct":         [0.42, 0.45, 0.48, 0.5],
+            "rsi_filter":         [0],
+            "adx_filter":         [0],
+            "trend_filter":       [0],
+        },
+    },
+
+    # ── Round 3: entry=580~650 × trail=20~26 × profit=0.5 격자 ──
+    {
+        "name": "entry=580~650 × trail=20~26 × profit=0.5 격자",
+        "hypothesis": "entry=610, trail=23, profit=0.5 방향. 이 조합 근방 넓은 격자 탐색",
+        "breakout_space": {
+            "entry_window":       [580, 590, 600, 605, 610, 615, 620, 630, 640, 650],
+            "exit_window":        [200, 205, 207, 210, 215],
+            "trail_mult":         [20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0],
+            "profit_target_mult": [0.45, 0.47, 0.5, 0.52, 0.55],
+            "volume_ratio":       [1.5, 1.6, 1.7],
+            "invest_pct":         [0.42, 0.45, 0.48, 0.5],
+            "rsi_filter":         [0],
+            "adx_filter":         [0],
+            "trend_filter":       [0],
+        },
+    },
+
+    # ── Round 4: volume 정밀 (entry=610, trail=23, profit=0.5) ───
+    {
+        "name": "거래량비율 정밀 (entry=610, trail=23, profit=0.5)",
+        "hypothesis": "volume=1.6이 C18 최고. 1.3~2.5 범위 정밀 탐색. 고거래량 필터 효과 극대화",
+        "breakout_space": {
+            "entry_window":       [605, 610, 615],
+            "exit_window":        [203, 207, 210],
+            "trail_mult":         [22.0, 23.0, 24.0],
+            "profit_target_mult": [0.45, 0.5, 0.55],
+            "volume_ratio":       [1.3, 1.4, 1.5, 1.55, 1.6, 1.65, 1.7, 1.8, 2.0, 2.2, 2.5],
+            "invest_pct":         [0.42, 0.45, 0.48, 0.5],
+            "rsi_filter":         [0],
+            "adx_filter":         [0],
+            "trend_filter":       [0],
+        },
+    },
+
+    # ── Round 5: exit 정밀 (entry=610, trail=23, profit=0.5) ─────
+    {
+        "name": "청산윈도우 정밀 (entry=610, trail=23, profit=0.5)",
+        "hypothesis": "exit=207이 C18 최고. entry=610 + trail=23 + profit=0.5 고정 후 exit 160~300",
+        "breakout_space": {
+            "entry_window":       [605, 610, 615],
+            "exit_window":        [160, 175, 190, 200, 205, 207, 210, 215, 220, 230, 250, 270, 290],
+            "trail_mult":         [21.0, 22.0, 23.0, 24.0, 25.0],
+            "profit_target_mult": [0.45, 0.5, 0.55],
+            "volume_ratio":       [1.5, 1.6, 1.7],
+            "invest_pct":         [0.42, 0.45, 0.48, 0.5],
+            "rsi_filter":         [0],
+            "adx_filter":         [0],
+            "trend_filter":       [0],
+        },
+    },
+
+    # ── Round 6: invest_pct 정밀 (entry=610, trail=23, profit=0.5) ─
+    {
+        "name": "invest_pct 정밀 (entry=610, trail=23, profit=0.5)",
+        "hypothesis": "invest=0.45가 C18 최고. 0.3~0.8 범위 정밀 탐색",
+        "breakout_space": {
+            "entry_window":       [605, 610, 615],
+            "exit_window":        [203, 207, 210],
+            "trail_mult":         [21.0, 22.0, 23.0, 24.0],
+            "profit_target_mult": [0.45, 0.5, 0.55],
+            "volume_ratio":       [1.5, 1.6, 1.7],
+            "invest_pct":         [0.3, 0.33, 0.35, 0.38, 0.4, 0.42, 0.43, 0.45, 0.47, 0.5, 0.55, 0.6, 0.7],
+            "rsi_filter":         [0],
+            "adx_filter":         [0],
+            "trend_filter":       [0],
+        },
+    },
+
+    # ── Round 7: 고커버리지 탐색 (entry=500, exit=260, 171종목) ──
+    {
+        "name": "고커버리지 탐색 (entry=500, exit=260, trail=28)",
+        "hypothesis": "R07: entry=500, exit=260, trail=28 → 88.5%, 171종목. 이 방향 정밀 탐색",
+        "breakout_space": {
+            "entry_window":       [470, 480, 490, 500, 510, 520, 530],
+            "exit_window":        [230, 240, 250, 260, 270, 280, 290, 300],
+            "trail_mult":         [24.0, 25.0, 26.0, 27.0, 28.0, 30.0],
+            "profit_target_mult": [0.38, 0.4, 0.42, 0.45, 0.5],
             "volume_ratio":       [1.3, 1.4, 1.5, 1.6],
-            "invest_pct":         [0.45, 0.48, 0.5, 0.53, 0.55],
+            "invest_pct":         [0.42, 0.45, 0.48, 0.5],
             "rsi_filter":         [0],
             "adx_filter":         [0],
             "trend_filter":       [0],
         },
     },
 
-    # ── Round 3: trail 극고범위 탐색 (28~40, entry=640) ─────────
+    # ── Round 8: trail=30~40 극고범위 (entry=610~650) ─────────────
     {
-        "name": "trail 극고범위 탐색 (28~40, entry=640)",
-        "hypothesis": "trail=28이 C17 최고. 30~40까지 상한 탐색. 극단적 stop이 더 좋은지 확인",
+        "name": "trail 극고범위 탐색 (30~40, entry=610~650)",
+        "hypothesis": "trail=32에서 R03 89.0% 달성. trail 30~40 × entry 610~650 집중 탐색",
         "breakout_space": {
-            "entry_window":       [630, 640, 650],
-            "exit_window":        [200, 203, 205, 210],
-            "trail_mult":         [26.0, 27.0, 28.0, 30.0, 32.0, 35.0, 38.0, 40.0],
-            "profit_target_mult": [0.35, 0.38, 0.4, 0.42, 0.45],
+            "entry_window":       [610, 620, 630, 640, 650],
+            "exit_window":        [200, 205, 207, 210, 215],
+            "trail_mult":         [28.0, 30.0, 32.0, 34.0, 36.0, 38.0, 40.0],
+            "profit_target_mult": [0.4, 0.42, 0.45, 0.5],
             "volume_ratio":       [1.4, 1.5, 1.6],
-            "invest_pct":         [0.45, 0.5, 0.55],
+            "invest_pct":         [0.42, 0.45, 0.5, 0.55],
             "rsi_filter":         [0],
             "adx_filter":         [0],
             "trend_filter":       [0],
         },
     },
 
-    # ── Round 4: entry=600~700 × trail=24~32 격자 ───────────────
+    # ── Round 9: 광역 재탐색 (entry 500~800, trail 20~40, profit 0.4~0.7) ─
     {
-        "name": "entry=600~700 × trail=24~32 격자 탐색",
-        "hypothesis": "entry 600~700 × trail 24~32 격자. 최고점 근방 전체 커버",
+        "name": "광역 재탐색 (entry 500~800, trail 20~40, profit 0.4~0.7)",
+        "hypothesis": "89%+ 달성 새 조합 발굴. entry × trail × profit 전방위 탐색. 90% 도전",
         "breakout_space": {
-            "entry_window":       [600, 610, 620, 630, 640, 650, 660, 680, 700],
-            "exit_window":        [195, 200, 205, 210],
-            "trail_mult":         [24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 32.0],
-            "profit_target_mult": [0.35, 0.38, 0.4, 0.42, 0.45],
-            "volume_ratio":       [1.4, 1.5, 1.6],
-            "invest_pct":         [0.45, 0.5, 0.55],
-            "rsi_filter":         [0],
-            "adx_filter":         [0],
-            "trend_filter":       [0],
-        },
-    },
-
-    # ── Round 5: exit 정밀 (entry=640, trail=28) ─────────────────
-    {
-        "name": "청산윈도우 정밀 (entry=640, trail=28)",
-        "hypothesis": "exit=203이 C17 최고. entry=640 + trail=28 고정 후 exit 160~280 재탐색",
-        "breakout_space": {
-            "entry_window":       [630, 640, 650],
-            "exit_window":        [160, 170, 180, 190, 195, 200, 203, 205, 210, 215, 220, 230, 250, 270],
-            "trail_mult":         [26.0, 27.0, 28.0, 29.0, 30.0],
-            "profit_target_mult": [0.35, 0.38, 0.4, 0.42, 0.45],
-            "volume_ratio":       [1.4, 1.5, 1.6],
-            "invest_pct":         [0.45, 0.5, 0.55],
-            "rsi_filter":         [0],
-            "adx_filter":         [0],
-            "trend_filter":       [0],
-        },
-    },
-
-    # ── Round 6: volume × profit 정밀 (entry=640, trail=28) ──────
-    {
-        "name": "volume×profit 정밀 (entry=640, trail=28)",
-        "hypothesis": "profit=0.38, vol=1.5가 C17 최고. profit 0.2~0.6 × vol 1.2~2.0 격자",
-        "breakout_space": {
-            "entry_window":       [630, 640, 650],
-            "exit_window":        [200, 203, 205],
-            "trail_mult":         [26.0, 27.0, 28.0, 29.0],
-            "profit_target_mult": [0.2, 0.25, 0.3, 0.33, 0.35, 0.38, 0.4, 0.42, 0.45, 0.5, 0.6],
-            "volume_ratio":       [1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0],
-            "invest_pct":         [0.45, 0.5, 0.55],
-            "rsi_filter":         [0],
-            "adx_filter":         [0],
-            "trend_filter":       [0],
-        },
-    },
-
-    # ── Round 7: 고커버리지 탐색 (entry=450~550, trail=24~28) ────
-    {
-        "name": "고커버리지 탐색 (entry=450~550, trail=24~28)",
-        "hypothesis": "165+ 종목 유지하면서 88.4% 달성 가능한지 탐색. entry=450~550 + trail=24~28",
-        "breakout_space": {
-            "entry_window":       [440, 450, 460, 480, 500, 520, 540, 550],
-            "exit_window":        [200, 220, 240, 260, 280, 300],
-            "trail_mult":         [22.0, 24.0, 26.0, 28.0],
-            "profit_target_mult": [0.38, 0.4, 0.42, 0.45],
-            "volume_ratio":       [1.2, 1.3, 1.4, 1.5],
-            "invest_pct":         [0.45, 0.5, 0.55],
-            "rsi_filter":         [0],
-            "adx_filter":         [0],
-            "trend_filter":       [0],
-        },
-    },
-
-    # ── Round 8: invest_pct 정밀 (entry=640, trail=28) ───────────
-    {
-        "name": "invest_pct 정밀 (entry=640, trail=28)",
-        "hypothesis": "invest=0.48이 C17 최고. 0.3~0.8 범위 정밀 탐색. 최적 포지션 확정",
-        "breakout_space": {
-            "entry_window":       [630, 640, 650],
-            "exit_window":        [200, 203, 205],
-            "trail_mult":         [26.0, 27.0, 28.0, 29.0],
-            "profit_target_mult": [0.35, 0.38, 0.4, 0.42],
-            "volume_ratio":       [1.4, 1.5, 1.6],
-            "invest_pct":         [0.3, 0.35, 0.38, 0.4, 0.43, 0.45, 0.48, 0.5, 0.55, 0.6, 0.7, 0.8],
-            "rsi_filter":         [0],
-            "adx_filter":         [0],
-            "trend_filter":       [0],
-        },
-    },
-
-    # ── Round 9: 광역 재탐색 (entry 500~900, trail 22~40) ────────
-    {
-        "name": "광역 재탐색 (entry 500~900, trail 22~40)",
-        "hypothesis": "entry=640 + trail=28 방향. 더 넓은 격자로 89% 달성 조합 발굴",
-        "breakout_space": {
-            "entry_window":       [500, 550, 600, 640, 680, 720, 760, 800, 850, 900],
-            "exit_window":        [170, 200, 220, 250, 280, 320],
-            "trail_mult":         [20.0, 22.0, 24.0, 26.0, 28.0, 30.0, 35.0, 40.0],
-            "profit_target_mult": [0.3, 0.35, 0.38, 0.4, 0.45, 0.5],
-            "volume_ratio":       [1.0, 1.2, 1.4, 1.5, 1.7, 2.0],
-            "invest_pct":         [0.4, 0.45, 0.5, 0.55, 0.6],
+            "entry_window":       [500, 550, 580, 600, 610, 620, 640, 660, 700, 750, 800],
+            "exit_window":        [180, 200, 210, 230, 260, 300],
+            "trail_mult":         [18.0, 20.0, 22.0, 25.0, 28.0, 32.0, 36.0, 40.0],
+            "profit_target_mult": [0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.7],
+            "volume_ratio":       [1.2, 1.4, 1.6, 1.8, 2.0],
+            "invest_pct":         [0.4, 0.43, 0.45, 0.5, 0.55],
             "rsi_filter":         [0],
             "adx_filter":         [0],
             "trend_filter":       [0],

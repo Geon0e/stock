@@ -23,154 +23,162 @@ sys.path.insert(0, os.path.dirname(__file__))
 # 각 라운드는 이전 라운드보다 더 정교한 파라미터 공간을 탐색
 
 ROUNDS = [
-    # ── Round 1: 기본 Breakout ─────────────────────────────────────
+    # ── Cycle3 핵심 발견 ─────────────────────────────────────────
+    # best: entry=100, exit=50, trail=6.0, profit=0.8, volume=1.2
+    #       rsi=0(없음), adx=30, trend=0(없음) -> 73.6%, 186종목, 3290거래
+    # 가설: 100일 신고가 자체가 강한 추세 선택. RSI/MA 필터는 불필요.
+    #       ADX>30만으로 추세 강도 충분. volume=1.2로 광범위 커버.
+
+    # ── Round 1: entry_window 정밀 (80~150) ───────────────────────
     {
-        "name": "기본 Breakout + 이익목표",
-        "hypothesis": "이익 목표를 추가하면 수익 구간에서 빠르게 청산 → 승률 증가",
+        "name": "초장기 진입윈도우 정밀 탐색",
+        "hypothesis": "entry=100이 Cycle3 최고. 80~150 범위 촘촘하게 탐색",
         "breakout_space": {
-            "entry_window":       [10, 15, 20, 25, 30, 40, 50],
-            "exit_window":        [5, 7, 10, 15, 20],
-            "trail_mult":         [2.0, 2.5, 3.0, 3.5, 4.0],
-            "profit_target_mult": [0.0, 1.5, 2.0, 2.5, 3.0],
-            "volume_ratio":       [1.0, 1.2, 1.5, 2.0],
-            "invest_pct":         [0.3, 0.4, 0.5, 0.6],
+            "entry_window":       [80, 85, 90, 95, 100, 105, 110, 120, 130, 150],
+            "exit_window":        [40, 45, 50, 55, 60],
+            "trail_mult":         [5.5, 6.0, 6.5],
+            "profit_target_mult": [0.7, 0.8, 0.9],
+            "volume_ratio":       [1.0, 1.2, 1.3],
+            "invest_pct":         [0.5, 0.6],
+            "rsi_filter":         [0],
+            "adx_filter":         [28, 30, 32],
+            "trend_filter":       [0],
+        },
+    },
+
+    # ── Round 2: exit_window 정밀 (30~70) ────────────────────────
+    {
+        "name": "청산 윈도우 정밀 (30~70 집중)",
+        "hypothesis": "exit=50이 Cycle3 최고. entry:exit 비율 2:1 가설. 30~70 탐색",
+        "breakout_space": {
+            "entry_window":       [100],
+            "exit_window":        [30, 35, 40, 45, 50, 55, 60, 65, 70],
+            "trail_mult":         [5.5, 6.0, 6.5],
+            "profit_target_mult": [0.7, 0.8, 0.9],
+            "volume_ratio":       [1.0, 1.2],
+            "invest_pct":         [0.5, 0.6],
+            "rsi_filter":         [0],
+            "adx_filter":         [28, 30, 32],
+            "trend_filter":       [0],
+        },
+    },
+
+    # ── Round 3: trail_mult 정밀 (5.0~8.0) ────────────────────────
+    {
+        "name": "ATR 손절폭 정밀 (5.0~8.0)",
+        "hypothesis": "trail=6.0이 Cycle3 최고. 5~8 범위 촘촘하게. 긴 윈도우엔 넓은 손절 필요",
+        "breakout_space": {
+            "entry_window":       [90, 100, 110],
+            "exit_window":        [45, 50, 55],
+            "trail_mult":         [5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0],
+            "profit_target_mult": [0.7, 0.8, 0.9],
+            "volume_ratio":       [1.0, 1.2],
+            "invest_pct":         [0.5, 0.6],
+            "rsi_filter":         [0],
+            "adx_filter":         [28, 30, 32],
+            "trend_filter":       [0],
+        },
+    },
+
+    # ── Round 4: ADX 정밀 (RSI/MA 없이) ──────────────────────────
+    {
+        "name": "ADX 단독 필터 정밀 탐색",
+        "hypothesis": "RSI/MA 없이 ADX만. 20~40 범위에서 최적 ADX 임계값 탐색",
+        "breakout_space": {
+            "entry_window":       [90, 100, 110],
+            "exit_window":        [45, 50, 55],
+            "trail_mult":         [6.0, 6.5],
+            "profit_target_mult": [0.7, 0.8, 0.9],
+            "volume_ratio":       [1.0, 1.2],
+            "invest_pct":         [0.5, 0.6],
+            "rsi_filter":         [0],
+            "adx_filter":         [20, 22, 25, 27, 28, 30, 32, 35, 38, 40],
+            "trend_filter":       [0],
+        },
+    },
+
+    # ── Round 5: profit_target 정밀 (0.5~1.2) ────────────────────
+    {
+        "name": "이익목표 정밀 (0.5~1.2)",
+        "hypothesis": "profit=0.8이 Cycle3 최고. 0.5~1.2 미세 탐색",
+        "breakout_space": {
+            "entry_window":       [90, 100, 110],
+            "exit_window":        [45, 50, 55],
+            "trail_mult":         [6.0, 6.5],
+            "profit_target_mult": [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2],
+            "volume_ratio":       [1.0, 1.2],
+            "invest_pct":         [0.5, 0.6],
+            "rsi_filter":         [0],
+            "adx_filter":         [30],
+            "trend_filter":       [0],
+        },
+    },
+
+    # ── Round 6: volume_ratio 탐색 ───────────────────────────────
+    {
+        "name": "거래량 조건 탐색 (1.0~1.5)",
+        "hypothesis": "volume=1.2가 Cycle3 최고. 1.0~1.5 미세 탐색. 낮을수록 종목 커버 증가",
+        "breakout_space": {
+            "entry_window":       [90, 100, 110],
+            "exit_window":        [45, 50, 55],
+            "trail_mult":         [6.0, 6.5],
+            "profit_target_mult": [0.7, 0.8, 0.9],
+            "volume_ratio":       [1.0, 1.05, 1.1, 1.2, 1.3, 1.4, 1.5],
+            "invest_pct":         [0.5, 0.6],
+            "rsi_filter":         [0],
+            "adx_filter":         [28, 30, 32],
+            "trend_filter":       [0],
+        },
+    },
+
+    # ── Round 7: invest_pct + ADX 없는 극단 탐색 ─────────────────
+    {
+        "name": "필터 최소화 극단 탐색",
+        "hypothesis": "RSI=0, MA=0, ADX=0 모두 제거. 순수 돌파 신호 강도만으로 승률 달성 가능?",
+        "breakout_space": {
+            "entry_window":       [80, 90, 100, 110, 120],
+            "exit_window":        [40, 45, 50, 55, 60],
+            "trail_mult":         [5.5, 6.0, 6.5, 7.0],
+            "profit_target_mult": [0.6, 0.7, 0.8, 1.0],
+            "volume_ratio":       [1.0, 1.1, 1.2],
+            "invest_pct":         [0.4, 0.5, 0.6],
             "rsi_filter":         [0],
             "adx_filter":         [0],
             "trend_filter":       [0],
         },
     },
 
-    # ── Round 2: RSI 필터 추가 ─────────────────────────────────────
+    # ── Round 8: Cycle3 최적 주변 Local Search ────────────────────
     {
-        "name": "RSI 진입 필터",
-        "hypothesis": "과매수 구간(RSI > N) 돌파는 반전 위험 → RSI 필터로 품질 개선",
+        "name": "Cycle3 최적 주변 Local Search",
+        "hypothesis": "entry=100, exit=50, trail=6, profit=0.8, vol=1.2, adx=30 주변 촘촘하게",
         "breakout_space": {
-            "entry_window":       [20, 25, 30, 40, 50],
-            "exit_window":        [10, 15, 20],
-            "trail_mult":         [3.0, 3.5, 4.0],
-            "profit_target_mult": [1.5, 2.0, 2.5],
-            "volume_ratio":       [1.0, 1.2, 1.5],
-            "invest_pct":         [0.3, 0.4, 0.5],
-            "rsi_filter":         [60, 65, 70, 75],   # ← 핵심 변화
-            "adx_filter":         [0],
+            "entry_window":       [85, 90, 95, 100, 105, 110, 115, 120],
+            "exit_window":        [40, 43, 45, 48, 50, 53, 55, 58, 60],
+            "trail_mult":         [5.5, 5.8, 6.0, 6.2, 6.5, 7.0],
+            "profit_target_mult": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+            "volume_ratio":       [1.0, 1.1, 1.2, 1.3, 1.4],
+            "invest_pct":         [0.4, 0.5, 0.55, 0.6],
+            "rsi_filter":         [0],
+            "adx_filter":         [25, 27, 28, 30, 32, 35],
             "trend_filter":       [0],
         },
     },
 
-    # ── Round 3: ADX 추세 강도 필터 ──────────────────────────────
+    # ── Round 9: MA200 재검증 (긴 윈도우 조합에서) ────────────────
     {
-        "name": "ADX 추세 강도 필터",
-        "hypothesis": "추세가 약한 구간(ADX < N) 돌파는 가짜 신호 → ADX 필터 추가",
+        "name": "MA200 재검증 (100일 윈도우 기반)",
+        "hypothesis": "entry=100에서 MA200이 도움되는지 재확인. 대세 하락장 제외 효과 검증",
         "breakout_space": {
-            "entry_window":       [20, 25, 30, 40, 50],
-            "exit_window":        [10, 15, 20],
-            "trail_mult":         [3.0, 3.5, 4.0],
-            "profit_target_mult": [1.5, 2.0, 2.5],
-            "volume_ratio":       [1.0, 1.2, 1.5],
-            "invest_pct":         [0.3, 0.4, 0.5],
-            "rsi_filter":         [65, 70],
-            "adx_filter":         [15, 20, 25, 30],  # ← 핵심 변화
-            "trend_filter":       [0],
-        },
-    },
-
-    # ── Round 4: 추세 MA 필터 ─────────────────────────────────────
-    {
-        "name": "MA 추세 방향 필터",
-        "hypothesis": "대세 상승장에서만 돌파 진입 → MA(N)선 위에서만 매수",
-        "breakout_space": {
-            "entry_window":       [20, 25, 30, 40, 50],
-            "exit_window":        [10, 15, 20],
-            "trail_mult":         [3.0, 3.5, 4.0],
-            "profit_target_mult": [1.5, 2.0, 2.5],
-            "volume_ratio":       [1.0, 1.2, 1.5],
-            "invest_pct":         [0.3, 0.4, 0.5],
-            "rsi_filter":         [65, 70],
-            "adx_filter":         [0, 20],
-            "trend_filter":       [50, 100, 150, 200],  # ← 핵심 변화
-        },
-    },
-
-    # ── Round 5: 복합 필터 조합 ──────────────────────────────────
-    {
-        "name": "RSI + ADX + 추세 복합",
-        "hypothesis": "세 필터 동시 적용으로 최고 품질 신호만 선별",
-        "breakout_space": {
-            "entry_window":       [20, 30, 40, 50, 60, 80],
-            "exit_window":        [10, 15, 20, 25],
-            "trail_mult":         [3.0, 3.5, 4.0, 4.5],
-            "profit_target_mult": [1.5, 2.0, 2.5, 3.0],
-            "volume_ratio":       [1.0, 1.2, 1.5],
-            "invest_pct":         [0.3, 0.4, 0.5],
-            "rsi_filter":         [60, 65, 70],
-            "adx_filter":         [15, 20, 25],
-            "trend_filter":       [0, 100, 200],
-        },
-    },
-
-    # ── Round 6: 더 긴 윈도우 ────────────────────────────────────
-    {
-        "name": "장기 채널 돌파",
-        "hypothesis": "더 긴 기간 최고가 돌파는 더 강한 신호 → 60~120일 윈도우",
-        "breakout_space": {
-            "entry_window":       [60, 70, 80, 90, 100, 120],
-            "exit_window":        [20, 25, 30, 40],
-            "trail_mult":         [3.0, 4.0, 5.0],
-            "profit_target_mult": [1.5, 2.0, 2.5, 3.0],
-            "volume_ratio":       [1.0, 1.2, 1.5],
-            "invest_pct":         [0.3, 0.4, 0.5],
-            "rsi_filter":         [65, 70, 75],
-            "adx_filter":         [0, 20],
+            "entry_window":       [90, 100, 110, 120],
+            "exit_window":        [45, 50, 55],
+            "trail_mult":         [5.5, 6.0, 6.5],
+            "profit_target_mult": [0.7, 0.8, 0.9],
+            "volume_ratio":       [1.0, 1.1, 1.2],
+            "invest_pct":         [0.5, 0.6],
+            "rsi_filter":         [0],
+            "adx_filter":         [25, 28, 30],
             "trend_filter":       [0, 200],
-        },
-    },
-
-    # ── Round 7: 촘촘한 이익 목표 ────────────────────────────────
-    {
-        "name": "세밀한 이익 목표 탐색",
-        "hypothesis": "1.0x~1.5x 짧은 이익 목표로 더 빠른 수익 실현 → 승률 극대화",
-        "breakout_space": {
-            "entry_window":       [20, 30, 40, 50],
-            "exit_window":        [10, 15, 20],
-            "trail_mult":         [3.0, 4.0],
-            "profit_target_mult": [0.8, 1.0, 1.2, 1.5, 1.8],   # ← 세밀한 목표
-            "volume_ratio":       [1.0, 1.2, 1.5],
-            "invest_pct":         [0.3, 0.4, 0.5],
-            "rsi_filter":         [65, 70],
-            "adx_filter":         [0, 20],
-            "trend_filter":       [0],
-        },
-    },
-
-    # ── Round 8: V2 전략 최적화 ──────────────────────────────────
-    {
-        "name": "MA 크로스 V2 집중 탐색",
-        "hypothesis": "V2 전략의 파라미터 공간을 넓혀 더 좋은 조합 탐색",
-        "v2_space": {
-            "short_window":  [3, 5, 7, 10, 12],
-            "long_window":   [15, 20, 25, 30, 35],
-            "trend_window":  [40, 50, 60, 80, 100, 120, 150],
-            "rsi_entry_max": [55, 60, 65, 70, 75, 80],
-            "trail_mult":    [0.0, 2.0, 2.5, 3.0, 3.5, 4.0],
-            "invest_pct":    [0.3, 0.4, 0.5, 0.6, 0.7],
-        },
-        "breakout_space": None,
-    },
-
-    # ── Round 9: 전략 재조합 ─────────────────────────────────────
-    {
-        "name": "전체 파라미터 재랜덤화",
-        "hypothesis": "모든 파라미터 공간 재탐색 - 이전 라운드에서 놓친 영역 탐색",
-        "breakout_space": {
-            "entry_window":       [10, 15, 20, 25, 30, 40, 50, 60, 80],
-            "exit_window":        [5, 7, 10, 15, 20, 25, 30],
-            "trail_mult":         [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0],
-            "profit_target_mult": [0.0, 0.8, 1.0, 1.5, 2.0, 2.5, 3.0],
-            "volume_ratio":       [1.0, 1.2, 1.5, 2.0],
-            "invest_pct":         [0.2, 0.3, 0.4, 0.5, 0.6],
-            "rsi_filter":         [0, 60, 65, 70, 75],
-            "adx_filter":         [0, 15, 20, 25, 30],
-            "trend_filter":       [0, 50, 100, 150, 200],
         },
     },
 ]

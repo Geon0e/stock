@@ -101,7 +101,7 @@ def _eval_universal(strategy_type: str, params: dict,
         except Exception:
             continue
 
-    if total_trades < 50 or len(per_stock) < 20:
+    if total_trades < 50 or len(per_stock) < 50:
         return {}
 
     aggregate_wr = total_wins / total_trades * 100

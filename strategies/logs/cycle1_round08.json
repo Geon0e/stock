@@ -1,0 +1,67 @@
+{
+  "cycle": 1,
+  "round": 8,
+  "round_name": "C10 최적 주변 Local Search",
+  "best": {
+    "win_rate": 84.10227904391328,
+    "profit_factor": 2.96,
+    "avg_cagr": 0.2183225806451614,
+    "avg_mdd": -12.210193548387096,
+    "total_trades": 1799,
+    "covered_stocks": 155,
+    "_strategy": "Breakout",
+    "_params": {
+      "entry_window": 470,
+      "exit_window": 240,
+      "trail_mult": 13.5,
+      "profit_target_mult": 0.4,
+      "volume_ratio": 1.4,
+      "invest_pct": 0.5,
+      "rsi_filter": 0,
+      "adx_filter": 0,
+      "trend_filter": 0
+    }
+  },
+  "top10": [
+    {
+      "win_rate": 84.10227904391328,
+      "profit_factor": 2.96,
+      "avg_cagr": 0.2183225806451614,
+      "avg_mdd": -12.210193548387096,
+      "total_trades": 1799,
+      "covered_stocks": 155,
+      "_strategy": "Breakout",
+      "_params": {
+        "entry_window": 470,
+        "exit_window": 240,
+        "trail_mult": 13.5,
+        "profit_target_mult": 0.4,
+        "volume_ratio": 1.4,
+        "invest_pct": 0.5,
+        "rsi_filter": 0,
+        "adx_filter": 0,
+        "trend_filter": 0
+      }
+    },
+    {
+      "win_rate": 81.61222339304531,
+      "profit_factor": 4.75,
+      "avg_cagr": 0.18360759493670883,
+      "avg_mdd": -11.395000000000005,
+      "total_trades": 1898,
+      "covered_stocks": 158,
+      "_strategy": "Breakout",
+      "_params": {
+        "entry_window": 470,
+        "exit_window": 240,
+        "trail_mult": 13.5,
+        "profit_target_mult": 0.2,
+        "volume_ratio": 1.4,
+        "invest_pct": 0.5,
+        "rsi_filter": 0,
+        "adx_filter": 0,
+        "trend_filter": 0
+      }
+    }
+  ]
+}

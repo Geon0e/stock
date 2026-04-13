@@ -1,0 +1,67 @@
+{
+  "cycle": 1,
+  "round": 9,
+  "round_name": "광역 재탐색 (실용 범위 200~700)",
+  "best": {
+    "win_rate": 83.88480392156863,
+    "profit_factor": 2.54,
+    "avg_cagr": 0.21669064748201422,
+    "avg_mdd": -8.326258992805757,
+    "total_trades": 1632,
+    "covered_stocks": 139,
+    "_strategy": "Breakout",
+    "_params": {
+      "entry_window": 600,
+      "exit_window": 100,
+      "trail_mult": 11.0,
+      "profit_target_mult": 0.4,
+      "volume_ratio": 1.2,
+      "invest_pct": 0.35,
+      "rsi_filter": 0,
+      "adx_filter": 0,
+      "trend_filter": 0
+    }
+  },
+  "top10": [
+    {
+      "win_rate": 83.88480392156863,
+      "profit_factor": 2.54,
+      "avg_cagr": 0.21669064748201422,
+      "avg_mdd": -8.326258992805757,
+      "total_trades": 1632,
+      "covered_stocks": 139,
+      "_strategy": "Breakout",
+      "_params": {
+        "entry_window": 600,
+        "exit_window": 100,
+        "trail_mult": 11.0,
+        "profit_target_mult": 0.4,
+        "volume_ratio": 1.2,
+        "invest_pct": 0.35,
+        "rsi_filter": 0,
+        "adx_filter": 0,
+        "trend_filter": 0
+      }
+    },
+    {
+      "win_rate": 83.76225490196079,
+      "profit_factor": 2.54,
+      "avg_cagr": 0.2641007194244604,
+      "avg_mdd": -11.899712230215828,
+      "total_trades": 1632,
+      "covered_stocks": 139,
+      "_strategy": "Breakout",
+      "_params": {
+        "entry_window": 600,
+        "exit_window": 100,
+        "trail_mult": 11.0,
+        "profit_target_mult": 0.4,
+        "volume_ratio": 1.2,
+        "invest_pct": 0.5,
+        "rsi_filter": 0,
+        "adx_filter": 0,
+        "trend_filter": 0
+      }
+    }
+  ]
+}

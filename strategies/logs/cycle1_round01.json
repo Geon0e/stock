@@ -1,0 +1,67 @@
+{
+  "cycle": 1,
+  "round": 1,
+  "round_name": "실용 최고점 탐색 (80종목+ 기준)",
+  "best": {
+    "win_rate": 85.53880513679508,
+    "profit_factor": 10.0,
+    "avg_cagr": 0.3760273972602742,
+    "avg_mdd": -9.338287671232871,
+    "total_trades": 1791,
+    "covered_stocks": 146,
+    "_strategy": "Breakout",
+    "_params": {
+      "entry_window": 550,
+      "exit_window": 180,
+      "trail_mult": 15.0,
+      "profit_target_mult": 0.3,
+      "volume_ratio": 1.2,
+      "invest_pct": 0.4,
+      "rsi_filter": 0,
+      "adx_filter": 0,
+      "trend_filter": 0
+    }
+  },
+  "top10": [
+    {
+      "win_rate": 85.53880513679508,
+      "profit_factor": 10.0,
+      "avg_cagr": 0.3760273972602742,
+      "avg_mdd": -9.338287671232871,
+      "total_trades": 1791,
+      "covered_stocks": 146,
+      "_strategy": "Breakout",
+      "_params": {
+        "entry_window": 550,
+        "exit_window": 180,
+        "trail_mult": 15.0,
+        "profit_target_mult": 0.3,
+        "volume_ratio": 1.2,
+        "invest_pct": 0.4,
+        "rsi_filter": 0,
+        "adx_filter": 0,
+        "trend_filter": 0
+      }
+    },
+    {
+      "win_rate": 84.08590308370044,
+      "profit_factor": 8.55,
+      "avg_cagr": 0.30721088435374183,
+      "avg_mdd": -9.400952380952377,
+      "total_trades": 1816,
+      "covered_stocks": 147,
+      "_strategy": "Breakout",
+      "_params": {
+        "entry_window": 550,
+        "exit_window": 180,
+        "trail_mult": 15.0,
+        "profit_target_mult": 0.25,
+        "volume_ratio": 1.2,
+        "invest_pct": 0.4,
+        "rsi_filter": 0,
+        "adx_filter": 0,
+        "trend_filter": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "cycle": 1,
+  "round": 6,
+  "round_name": "volume+invest 정밀 조합",
+  "best": {
+    "win_rate": 85.62962962962963,
+    "profit_factor": 2.25,
+    "avg_cagr": 0.2792258064516128,
+    "avg_mdd": -10.522903225806449,
+    "total_trades": 2025,
+    "covered_stocks": 155,
+    "_strategy": "Breakout",
+    "_params": {
+      "entry_window": 500,
+      "exit_window": 250,
+      "trail_mult": 16.0,
+      "profit_target_mult": 0.35,
+      "volume_ratio": 1.1,
+      "invest_pct": 0.4,
+      "rsi_filter": 0,
+      "adx_filter": 0,
+      "trend_filter": 0
+    }
+  },
+  "top10": [
+    {
+      "win_rate": 85.62962962962963,
+      "profit_factor": 2.25,
+      "avg_cagr": 0.2792258064516128,
+      "avg_mdd": -10.522903225806449,
+      "total_trades": 2025,
+      "covered_stocks": 155,
+      "_strategy": "Breakout",
+      "_params": {
+        "entry_window": 500,
+        "exit_window": 250,
+        "trail_mult": 16.0,
+        "profit_target_mult": 0.35,
+        "volume_ratio": 1.1,
+        "invest_pct": 0.4,
+        "rsi_filter": 0,
+        "adx_filter": 0,
+        "trend_filter": 0
+      }
+    },
+    {
+      "win_rate": 85.15092502434275,
+      "profit_factor": 4.18,
+      "avg_cagr": 0.3290322580645161,
+      "avg_mdd": -9.99270967741935,
+      "total_trades": 2054,
+      "covered_stocks": 155,
+      "_strategy": "Breakout",
+      "_params": {
+        "entry_window": 500,
+        "exit_window": 250,
+        "trail_mult": 16.0,
+        "profit_target_mult": 0.3,
+        "volume_ratio": 1.1,
+        "invest_pct": 0.4,
+        "rsi_filter": 0,
+        "adx_filter": 0,
+        "trend_filter": 0
+      }
+    }
+  ]
+}

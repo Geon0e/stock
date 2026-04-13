@@ -1,0 +1,67 @@
+{
+  "cycle": 1,
+  "round": 5,
+  "round_name": "이익목표 정밀 (0.2~0.5)",
+  "best": {
+    "win_rate": 84.08653846153847,
+    "profit_factor": 4.13,
+    "avg_cagr": 0.3006410256410255,
+    "avg_mdd": -11.259551282051284,
+    "total_trades": 2080,
+    "covered_stocks": 156,
+    "_strategy": "Breakout",
+    "_params": {
+      "entry_window": 500,
+      "exit_window": 260,
+      "trail_mult": 16.0,
+      "profit_target_mult": 0.25,
+      "volume_ratio": 1.1,
+      "invest_pct": 0.45,
+      "rsi_filter": 0,
+      "adx_filter": 0,
+      "trend_filter": 0
+    }
+  },
+  "top10": [
+    {
+      "win_rate": 84.08653846153847,
+      "profit_factor": 4.13,
+      "avg_cagr": 0.3006410256410255,
+      "avg_mdd": -11.259551282051284,
+      "total_trades": 2080,
+      "covered_stocks": 156,
+      "_strategy": "Breakout",
+      "_params": {
+        "entry_window": 500,
+        "exit_window": 260,
+        "trail_mult": 16.0,
+        "profit_target_mult": 0.25,
+        "volume_ratio": 1.1,
+        "invest_pct": 0.45,
+        "rsi_filter": 0,
+        "adx_filter": 0,
+        "trend_filter": 0
+      }
+    },
+    {
+      "win_rate": 83.99038461538461,
+      "profit_factor": 3.31,
+      "avg_cagr": 0.3223076923076921,
+      "avg_mdd": -11.06423076923077,
+      "total_trades": 2080,
+      "covered_stocks": 156,
+      "_strategy": "Breakout",
+      "_params": {
+        "entry_window": 500,
+        "exit_window": 260,
+        "trail_mult": 15.0,
+        "profit_target_mult": 0.25,
+        "volume_ratio": 1.1,
+        "invest_pct": 0.45,
+        "rsi_filter": 0,
+        "adx_filter": 0,
+        "trend_filter": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "cycle": 1,
+  "round": 3,
+  "round_name": "ATR 손절폭 정밀 (12~18)",
+  "best": {
+    "win_rate": 85.6776180698152,
+    "profit_factor": 8.55,
+    "avg_cagr": 0.3008441558441558,
+    "avg_mdd": -9.915974025974023,
+    "total_trades": 1948,
+    "covered_stocks": 154,
+    "_strategy": "Breakout",
+    "_params": {
+      "entry_window": 500,
+      "exit_window": 240,
+      "trail_mult": 17.0,
+      "profit_target_mult": 0.3,
+      "volume_ratio": 1.2,
+      "invest_pct": 0.4,
+      "rsi_filter": 0,
+      "adx_filter": 0,
+      "trend_filter": 0
+    }
+  },
+  "top10": [
+    {
+      "win_rate": 85.6776180698152,
+      "profit_factor": 8.55,
+      "avg_cagr": 0.3008441558441558,
+      "avg_mdd": -9.915974025974023,
+      "total_trades": 1948,
+      "covered_stocks": 154,
+      "_strategy": "Breakout",
+      "_params": {
+        "entry_window": 500,
+        "exit_window": 240,
+        "trail_mult": 17.0,
+        "profit_target_mult": 0.3,
+        "volume_ratio": 1.2,
+        "invest_pct": 0.4,
+        "rsi_filter": 0,
+        "adx_filter": 0,
+        "trend_filter": 0
+      }
+    },
+    {
+      "win_rate": 85.42884990253411,
+      "profit_factor": 5.62,
+      "avg_cagr": 0.32496774193548383,
+      "avg_mdd": -10.123935483870964,
+      "total_trades": 2052,
+      "covered_stocks": 155,
+      "_strategy": "Breakout",
+      "_params": {
+        "entry_window": 500,
+        "exit_window": 240,
+        "trail_mult": 17.0,
+        "profit_target_mult": 0.3,
+        "volume_ratio": 1.1,
+        "invest_pct": 0.4,
+        "rsi_filter": 0,
+        "adx_filter": 0,
+        "trend_filter": 0
+      }
+    }
+  ]
+}

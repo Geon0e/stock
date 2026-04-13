@@ -1,0 +1,67 @@
+{
+  "cycle": 1,
+  "round": 7,
+  "round_name": "중장기 균형점 (entry 200~400)",
+  "best": {
+    "win_rate": 83.89057750759878,
+    "profit_factor": 1.55,
+    "avg_cagr": 0.2779374999999998,
+    "avg_mdd": -9.107437500000001,
+    "total_trades": 2303,
+    "covered_stocks": 160,
+    "_strategy": "Breakout",
+    "_params": {
+      "entry_window": 400,
+      "exit_window": 180,
+      "trail_mult": 13.0,
+      "profit_target_mult": 0.35,
+      "volume_ratio": 1.2,
+      "invest_pct": 0.35,
+      "rsi_filter": 0,
+      "adx_filter": 0,
+      "trend_filter": 0
+    }
+  },
+  "top10": [
+    {
+      "win_rate": 83.89057750759878,
+      "profit_factor": 1.55,
+      "avg_cagr": 0.2779374999999998,
+      "avg_mdd": -9.107437500000001,
+      "total_trades": 2303,
+      "covered_stocks": 160,
+      "_strategy": "Breakout",
+      "_params": {
+        "entry_window": 400,
+        "exit_window": 180,
+        "trail_mult": 13.0,
+        "profit_target_mult": 0.35,
+        "volume_ratio": 1.2,
+        "invest_pct": 0.35,
+        "rsi_filter": 0,
+        "adx_filter": 0,
+        "trend_filter": 0
+      }
+    },
+    {
+      "win_rate": 82.8377230246389,
+      "profit_factor": 1.79,
+      "avg_cagr": 0.28751552795031055,
+      "avg_mdd": -8.638633540372673,
+      "total_trades": 2354,
+      "covered_stocks": 161,
+      "_strategy": "Breakout",
+      "_params": {
+        "entry_window": 400,
+        "exit_window": 180,
+        "trail_mult": 13.0,
+        "profit_target_mult": 0.25,
+        "volume_ratio": 1.2,
+        "invest_pct": 0.35,
+        "rsi_filter": 0,
+        "adx_filter": 0,
+        "trend_filter": 0
+      }
+    }
+  ]
+}
